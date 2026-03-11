@@ -1,7 +1,17 @@
-import React from "react"
-import { CheckCircle2, Clock, Pause } from "lucide-react"
+import React, { useState } from "react"
+import { CheckCircle2, Clock, Pause, Pencil, Check } from "lucide-react"
 
-const phases = [
+interface PhaseItem {
+  quarter: string
+  title: string
+  period: string
+  status: "complete" | "in_progress" | "pending"
+  progress: number
+  color: string
+  items: string[]
+}
+
+const initialPhases: PhaseItem[] = [
   {
     quarter: "Q1",
     title: "Lançamento do Mixchannel",
@@ -62,7 +72,68 @@ const statusConfig = {
   pending: { icon: Pause, label: "Pendente", className: "text-gray-400 bg-gray-100" },
 }
 
+interface EditFieldProps {
+  value: string
+  onChange: (v: string) => void
+  className?: string
+  dark?: boolean
+  multiline?: boolean
+}
+
+function EditField({ value, onChange, className = "", dark, multiline }: EditFieldProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  React.useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  const save = () => { onChange(draft); setEditing(false) }
+
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1">
+        {multiline ? (
+          <textarea
+            autoFocus value={draft}
+            onChange={e => setDraft(e.target.value)}
+            className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none resize-none ${className}`}
+            rows={2}
+            style={{ minWidth: 180 }}
+          />
+        ) : (
+          <input
+            autoFocus value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && save()}
+            className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none ${className}`}
+            style={{ minWidth: 80 }}
+          />
+        )}
+        <button onClick={save} className="p-0.5 rounded bg-black/10 hover:bg-black/20"><Check size={11} /></button>
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 group/ef cursor-pointer" onClick={() => setEditing(true)}>
+      <span className={className}>{value}</span>
+      <Pencil size={11} className={`opacity-0 group-hover/ef:opacity-60 transition-opacity flex-shrink-0 ${dark ? 'text-white/50' : 'text-gray-400'}`} />
+    </span>
+  )
+}
+
 export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
+  const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
+
+  const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
+    setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
+  }
+
+  const updateItem = (phaseIdx: number, itemIdx: number, value: string) => {
+    setPhases(prev => prev.map((p, i) => {
+      if (i !== phaseIdx) return p
+      const newItems = [...p.items]
+      newItems[itemIdx] = value
+      return { ...p, items: newItems }
+    }))
+  }
+
   return (
     <div>
       {!dark && <h2 className="text-xl font-bold text-gray-900 mb-1">Roadmap Estratégico</h2>}
@@ -78,23 +149,21 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
               }`}
             >
               <div className="flex flex-col md:flex-row md:items-start gap-4">
-                <div
-                  className={`w-14 h-14 rounded-xl bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}
-                >
-                  <span className="text-white font-extrabold text-sm">{phase.quarter}</span>
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}>
+                  <span className="text-white font-extrabold text-sm">
+                    <EditField value={phase.quarter} onChange={v => updatePhase(i, 'quarter', v)} className="text-white font-extrabold text-sm" dark={dark} />
+                  </span>
                 </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>
-                      {phase.title}
+                      <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} />
                     </h3>
                     <span className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`}>
-                      {phase.period}
+                      <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} />
                     </span>
-                    <span
-                      className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}
-                    >
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}>
                       <StatusIcon size={12} />
                       {statusConfig[phase.status].label}
                     </span>
@@ -109,22 +178,27 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
 
                   <ul className="space-y-1.5">
                     {phase.items.map((item, j) => (
-                      <li
-                        key={j}
-                        className={`flex items-start gap-2 text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}
-                      >
-                        <span
-                          className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dark ? 'bg-white/30' : 'bg-gray-300'}`}
+                      <li key={j} className={`flex items-start gap-2 text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
+                        <EditField
+                          value={item}
+                          onChange={v => updateItem(i, j, v)}
+                          className={`text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}
+                          dark={dark}
                         />
-                        {item}
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                <span className={`text-2xl font-extrabold hidden md:block ${dark ? 'text-white/20' : 'text-gray-200'}`}>
-                  {phase.progress}%
-                </span>
+                <div className={`text-2xl font-extrabold hidden md:block ${dark ? 'text-white/20' : 'text-gray-200'}`}>
+                  <EditField
+                    value={String(phase.progress)}
+                    onChange={v => updatePhase(i, 'progress', Number(v) || 0)}
+                    className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}
+                    dark={dark}
+                  />%
+                </div>
               </div>
             </div>
           )
