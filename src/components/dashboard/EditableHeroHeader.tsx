@@ -58,7 +58,9 @@ interface StatItem {
 
 export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
   const gradientCss = accentGradient?.css || 'linear-gradient(135deg, #3B6AF5, #7B35EF)'
-  const [photo, setPhoto] = useState<string | null>(null)
+  const [photo, setPhoto] = useState<string | null>(() => {
+    try { return localStorage.getItem('af_hero_photo') } catch { return null }
+  })
   const [companyName, setCompanyName] = useState("AF Consultoria & Projetos")
   const [tagline, setTagline] = useState("Inteligência Estratégica de Marketing")
   const [subtitle, setSubtitle] = useState("Centro de Inteligência de Marketing Estratégico 2026")
@@ -89,6 +91,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
     reader.onload = (ev) => {
       if (ev.target?.result && typeof ev.target.result === 'string') {
         setPhoto(ev.target.result)
+        try { localStorage.setItem('af_hero_photo', ev.target.result) } catch {}
       }
     }
     reader.readAsDataURL(file)
@@ -106,8 +109,11 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         width: "1565px",
         height: "659px",
         maxWidth: "100%",
-        padding: "52px 64px",
+        padding: "40px 64px 32px",
         boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
       }}
     >
       <div className="absolute inset-0 opacity-10 pointer-events-none">
@@ -115,7 +121,8 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-violet-400/30 blur-3xl" />
       </div>
 
-      <div className="relative flex flex-row items-center justify-between gap-6 h-full">
+      {/* Top: main content */}
+      <div className="relative flex flex-row items-center justify-between gap-6">
         <div className="flex items-center gap-7">
           <div
             className="w-36 h-36 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 cursor-pointer relative group overflow-hidden flex-shrink-0"
@@ -160,14 +167,15 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         </div>
       </div>
 
-      <div className="relative mt-10 flex divide-x divide-white/20">
+      {/* Bottom: stats bar always visible */}
+      <div className="relative flex divide-x divide-white/20 border-t border-white/20 pt-5">
         {stats.map((s, i) => (
           <div key={i} className="flex-1 text-center px-6 first:pl-0">
             <div className="leading-tight">
-              <EditableField value={s.value} onChange={v => updateStat(i, 'value', v)} className="text-5xl font-extrabold text-white" />
+              <EditableField value={s.value} onChange={v => updateStat(i, 'value', v)} className="text-4xl font-extrabold text-white" />
             </div>
-            <p className="text-sm text-blue-200 mt-1">
-              <EditableField value={s.label} onChange={v => updateStat(i, 'label', v)} className="text-sm text-blue-200" />
+            <p className="text-sm text-white mt-1">
+              <EditableField value={s.label} onChange={v => updateStat(i, 'label', v)} className="text-sm text-white" />
             </p>
           </div>
         ))}
