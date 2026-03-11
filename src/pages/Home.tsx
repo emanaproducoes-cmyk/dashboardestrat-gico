@@ -1,5 +1,5 @@
 import type { PageProps } from "../lib/types"
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import EditableHeroHeader from "../components/dashboard/EditableHeroHeader"
 import ChannelChart from "../components/dashboard/ChannelChart"
 import ChannelComparison from "../components/dashboard/ChannelComparison"
@@ -7,27 +7,59 @@ import ContentDistribution from "../components/dashboard/ContentDistribution"
 import ClientJourney from "../components/dashboard/ClientJourney"
 import OKRNightingaleChart from "../components/dashboard/OKRNightingaleChart"
 import RoadmapTimeline from "../components/dashboard/RoadmapTimeline"
-import DraggableCover from "../components/dashboard/DraggableCover"
 import PillarModal from "../components/dashboard/PillarModal"
-import { Award, Radio, Users, Target, ArrowRight } from "lucide-react"
+import { Award, Radio, Users, Target, ArrowRight, Pencil, Check } from "lucide-react"
 
-const pillars = [
+const initialPillars = [
   { id: "autoridade", label: "Autoridade Digital", icon: Award, gradient: "from-violet-600 to-purple-800", desc: "Posicionamento como referência em FNO" },
   { id: "multichannel", label: "Estratégia Multichannel", icon: Radio, gradient: "from-blue-600 to-cyan-700", desc: "LinkedIn, YouTube, Instagram, Blog" },
   { id: "provasSocial", label: "Prova Social", icon: Users, gradient: "from-rose-600 to-pink-800", desc: "Cases de sucesso e depoimentos" },
   { id: "posicionamento", label: "Posicionamento", icon: Target, gradient: "from-amber-500 to-orange-700", desc: "Consolidação da marca AF" },
 ]
 
+interface InlineEditableProps {
+  value: string
+  onChange: (v: string) => void
+  className?: string
+  textColor?: string
+}
+
+function InlineEditable({ value, onChange, className = "", textColor }: InlineEditableProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  const save = () => { onChange(draft); setEditing(false) }
+  if (editing) {
+    return (
+      <span className="inline-flex items-center gap-1" onClick={e => e.stopPropagation()}>
+        <input
+          autoFocus value={draft}
+          onChange={e => setDraft(e.target.value)}
+          onKeyDown={e => e.key === 'Enter' && save()}
+          className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none ${className}`}
+          style={{ minWidth: 80 }}
+        />
+        <button onClick={save} className="p-0.5 bg-black/10 rounded hover:bg-black/20"><Check size={10} /></button>
+      </span>
+    )
+  }
+  return (
+    <span className="inline-flex items-center gap-1 group/edit cursor-pointer" onClick={e => { e.stopPropagation(); setEditing(true) }}>
+      <span className={className}>{value}</span>
+      <Pencil size={11} className="opacity-0 group-hover/edit:opacity-60 transition-opacity flex-shrink-0" style={{ color: textColor || 'currentColor' }} />
+    </span>
+  )
+}
+
 export default function Home({ darkMode = true, accentGradient }: PageProps) {
-  // BUG FIX: explicitly typed state
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null)
+  const [pillars, setPillars] = useState(initialPillars)
 
-  const sectionBg = darkMode
-    ? "bg-white/8 border border-white/10"
-    : "bg-white border border-gray-100 shadow-sm"
+  const updatePillar = (id: string, field: 'label' | 'desc', val: string) => {
+    setPillars(prev => prev.map(p => p.id === id ? { ...p, [field]: val } : p))
+  }
 
-  const titleClass = darkMode ? "text-white" : "text-gray-900"
-  const subtitleClass = darkMode ? "text-white/50" : "text-gray-500"
+  const sectionBg = darkMode ? "bg-white/8 border border-white/10" : "bg-white border border-gray-100 shadow-sm"
   const sectionTitle = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
   const sectionSub = darkMode ? "text-white/40 text-sm" : "text-gray-400 text-sm"
 
@@ -52,8 +84,22 @@ export default function Home({ darkMode = true, accentGradient }: PageProps) {
                 <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${p.gradient} flex items-center justify-center mb-4`}>
                   <Icon size={22} className="text-white" />
                 </div>
-                <h3 className={`font-bold text-sm mb-1 ${titleClass}`}>{p.label}</h3>
-                <p className={`text-xs ${subtitleClass}`}>{p.desc}</p>
+                <h3 className={`font-bold text-sm mb-1 ${darkMode ? 'text-white' : 'text-gray-900'}`}>
+                  <InlineEditable
+                    value={p.label}
+                    onChange={v => updatePillar(p.id, 'label', v)}
+                    className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}
+                    textColor={darkMode ? 'rgba(255,255,255,0.5)' : '#9ca3af'}
+                  />
+                </h3>
+                <p className={`text-xs ${darkMode ? 'text-white/50' : 'text-gray-500'}`}>
+                  <InlineEditable
+                    value={p.desc}
+                    onChange={v => updatePillar(p.id, 'desc', v)}
+                    className={`text-xs ${darkMode ? 'text-white/50' : 'text-gray-500'}`}
+                    textColor={darkMode ? 'rgba(255,255,255,0.3)' : '#9ca3af'}
+                  />
+                </p>
                 <div className={`flex items-center gap-1 text-xs mt-3 ${darkMode ? 'text-blue-300' : 'text-blue-600'} group-hover:gap-2 transition-all`}>
                   Ver detalhes <ArrowRight size={12} />
                 </div>
@@ -91,12 +137,6 @@ export default function Home({ darkMode = true, accentGradient }: PageProps) {
         <h2 className={`${sectionTitle} mb-1`}>Roadmap Estratégico</h2>
         <p className={`${sectionSub} mb-5`}>Linha do tempo de execução 2026</p>
         <RoadmapTimeline dark={darkMode} />
-      </section>
-
-      <section className={`rounded-2xl p-6 ${sectionBg}`}>
-        <h2 className={`${sectionTitle} mb-1`}>Editor de Capa</h2>
-        <p className={`${sectionSub} mb-5`}>Personalize o slide de abertura — arraste e edite</p>
-        <DraggableCover accentGradient={accentGradient} dark={darkMode} />
       </section>
 
       {selectedPillar && (
