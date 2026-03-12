@@ -3,6 +3,7 @@ import { useAuth } from "../../lib/AuthContext"
 import { getUserItem, setUserItem } from "../../lib/auth"
 import { Sparkles, Clock, Pencil, Check, Camera } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
+import HeaderMiniCharts from "./HeaderMiniCharts"
 
 interface EditableFieldProps {
   value: string
@@ -192,6 +193,10 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
             <p className="text-sm text-blue-200">{date}</p>
           </div>
         </div>
+      </div>
+
+      <div className="relative">
+        <HeaderMiniCharts />
       </div>
 
       <div className="relative flex divide-x divide-white/20 border-t border-white/20 pt-6 mt-16">
