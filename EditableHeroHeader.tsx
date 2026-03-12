@@ -1,142 +1,192 @@
-import React from "react"
-import { X, Check } from "lucide-react"
+import React, { useState, useRef, useEffect } from "react"
+import { useAuth } from "../../lib/AuthContext"
+import { getUserItem, setUserItem } from "../../lib/auth"
+import { Sparkles, Clock, Pencil, Check, Camera } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
 
-export const GRADIENT_GROUPS = [
-  {
-    label: "Azuis & Roxos",
-    items: [
-      { id: 'g1', label: 'Oceano Real', css: 'linear-gradient(160deg, #4169E1, #2541B2)', from: '#4169E1', to: '#2541B2' },
-      { id: 'g2', label: 'Safira', css: 'linear-gradient(160deg, #4B6FD8, #1a1a7e)', from: '#4B6FD8', to: '#1a1a7e' },
-      { id: 'g3', label: 'Ciano Violeta', css: 'linear-gradient(160deg, #00C9FF, #5B00FF)', from: '#00C9FF', to: '#5B00FF' },
-      { id: 'g4', label: 'Aura Púrpura', css: 'linear-gradient(160deg, #9B59B6, #2D1B69)', from: '#9B59B6', to: '#2D1B69' },
-      { id: 'g5', label: 'Azul Teal', css: 'linear-gradient(160deg, #4169E1, #006994)', from: '#4169E1', to: '#006994' },
-      { id: 'g6', label: 'Aço Profundo', css: 'linear-gradient(160deg, #4682B4, #1B3A7A)', from: '#4682B4', to: '#1B3A7A' },
-      { id: 'g7', label: 'Marinho', css: 'linear-gradient(160deg, #1B4F8A, #0D1B3E)', from: '#1B4F8A', to: '#0D1B3E' },
-    ]
-  },
-  {
-    label: "Vibrantes",
-    items: [
-      { id: 'g8', label: 'Menta Aurora', css: 'linear-gradient(160deg, #00E5CC, #00C9A7)', from: '#00E5CC', to: '#00C9A7' },
-      { id: 'g9', label: 'Pôr do Sol', css: 'linear-gradient(160deg, #FFB347, #FF2D78)', from: '#FFB347', to: '#FF2D78' },
-      { id: 'g10', label: 'Céu Tropical', css: 'linear-gradient(160deg, #54C8FF, #29B6F6)', from: '#54C8FF', to: '#29B6F6' },
-      { id: 'g11', label: 'Cosmos', css: 'linear-gradient(160deg, #4169E1, #AB47BC)', from: '#4169E1', to: '#AB47BC' },
-      { id: 'g12', label: 'Floresta', css: 'linear-gradient(160deg, #00E676, #00897B)', from: '#00E676', to: '#00897B' },
-      { id: 'g13', label: 'Âmbar Solar', css: 'linear-gradient(160deg, #FFD600, #FF6D00)', from: '#FFD600', to: '#FF6D00' },
-      { id: 'g14', label: 'Lavanda', css: 'linear-gradient(160deg, #B39DDB, #7C4DFF)', from: '#B39DDB', to: '#7C4DFF' },
-    ]
-  },
-  {
-    label: "Ousados",
-    items: [
-      { id: 'g15', label: 'Ciano Elétrico', css: 'linear-gradient(135deg, #00C9FF, #0080FF)', from: '#00C9FF', to: '#0080FF' },
-      { id: 'g16', label: 'Índigo Neon', css: 'linear-gradient(135deg, #6C63FF, #3F5EFB)', from: '#6C63FF', to: '#3F5EFB' },
-      { id: 'g17', label: 'Esmeralda', css: 'linear-gradient(135deg, #1DE9B6, #00B0FF)', from: '#1DE9B6', to: '#00B0FF' },
-      { id: 'g18', label: 'Jade', css: 'linear-gradient(135deg, #69F0AE, #00E676)', from: '#69F0AE', to: '#00E676' },
-      { id: 'g19', label: 'Mel Dourado', css: 'linear-gradient(135deg, #FFD740, #FFAB40)', from: '#FFD740', to: '#FFAB40' },
-      { id: 'g20', label: 'Vulcão', css: 'linear-gradient(135deg, #FF6D00, #FF3D00)', from: '#FF6D00', to: '#FF3D00' },
-      { id: 'g21', label: 'Rubi', css: 'linear-gradient(135deg, #FF5252, #D50000)', from: '#FF5252', to: '#D50000' },
-      { id: 'g22', label: 'Coral', css: 'linear-gradient(135deg, #FF8A65, #FF6B6B)', from: '#FF8A65', to: '#FF6B6B' },
-      { id: 'g23', label: 'Magenta', css: 'linear-gradient(135deg, #EA00FF, #9C27B0)', from: '#EA00FF', to: '#9C27B0' },
-      { id: 'g24', label: 'Fogo Roxo', css: 'linear-gradient(135deg, #FF1744, #9C27B0)', from: '#FF1744', to: '#9C27B0' },
-      { id: 'g25', label: 'Ametista', css: 'linear-gradient(135deg, #9C27B0, #6200EA)', from: '#9C27B0', to: '#6200EA' },
-      { id: 'g26', label: 'Azul Profundo', css: 'linear-gradient(135deg, #1565C0, #0D47A1)', from: '#1565C0', to: '#0D47A1' },
-    ]
+interface EditableFieldProps {
+  value: string
+  onChange: (v: string) => void
+  className?: string
+  multiline?: boolean
+}
+
+function EditableField({ value, onChange, className = '', multiline }: EditableFieldProps) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  const save = () => { onChange(draft); setEditing(false) }
+  if (editing) {
+    const sharedProps = {
+      autoFocus: true,
+      value: draft,
+      onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
+      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !multiline) save() },
+      className: `bg-white/20 border border-white/40 rounded px-2 py-1 text-white outline-none min-w-[120px] ${className}`,
+    }
+    return (
+      <span className="inline-flex items-center gap-1">
+        {multiline
+          ? <textarea {...sharedProps} className={`${sharedProps.className} resize-none min-w-[200px]`} rows={2} />
+          : <input {...sharedProps} />
+        }
+        <button onClick={save} className="p-1 bg-white/30 rounded hover:bg-white/50"><Check size={12} className="text-white" /></button>
+      </span>
+    )
   }
-]
-
-export const DEFAULT_GRADIENT: GradientOption = {
-  id: 'default',
-  label: 'Padrão AF',
-  css: 'linear-gradient(135deg, #3B6AF5, #7B35EF)',
-  from: '#3B6AF5',
-  to: '#7B35EF'
+  return (
+    <span className="inline-flex items-center gap-1 group cursor-pointer" onClick={() => setEditing(true)}>
+      <span className={className}>{value}</span>
+      <Pencil size={12} className="text-white/40 group-hover:text-white/80 opacity-0 group-hover:opacity-100 transition-all" />
+    </span>
+  )
 }
 
-interface PickerProps {
-  selectedGradient?: GradientOption
-  onSelect: (g: GradientOption) => void
-  onClose: () => void
-  dark?: boolean
-}
+interface StatItem { value: string; label: string }
 
-export default function GlobalColorPicker({ selectedGradient, onSelect, onClose, dark }: PickerProps) {
-  const border = dark ? 'rgba(255,255,255,0.1)' : '#e5e7eb'
-  const bg = dark ? 'rgba(8,14,35,0.98)' : 'white'
-  const textColor = dark ? 'text-white' : 'text-gray-900'
-  const groupColor = dark ? 'text-white/30' : 'text-gray-400'
-  const subColor = dark ? 'text-white/40' : 'text-gray-500'
-  const btnHover = dark ? 'hover:bg-white/10 text-white/60' : 'hover:bg-gray-100 text-gray-400'
+export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
+  const gradientCss = accentGradient?.css || 'linear-gradient(135deg, #3B6AF5, #7B35EF)'
+  const { user } = useAuth()
+  const uid = user?.id ?? 'guest'
+  const [photo, setPhoto] = useState<string | null>(() => {
+    try { return getUserItem(uid, 'hero_photo') } catch { return null }
+  })
+  const [companyName, setCompanyName] = useState("AF Consultoria & Projetos")
+  const [tagline, setTagline] = useState("Inteligência Estratégica de Marketing")
+  const [subtitle, setSubtitle] = useState("Centro de Inteligência de Marketing Estratégico 2026")
+  const [description, setDescription] = useState("Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados. Monitore KPIs, acompanhe performance e otimize sua estratégia multicanal.")
+  const [stats, setStats] = useState<StatItem[]>([
+    { value: "200", label: "Meta Anual LinkedIn" },
+    { value: "500", label: "Meta Anual YouTube" },
+    { value: "70-105", label: "Conversão Instagram" },
+    { value: "3-4", label: "Cases de Sucesso" },
+  ])
+  const [hoveredStat, setHoveredStat] = useState<number | null>(null)
+  const [now, setNow] = useState(new Date())
+  const fileRef = useRef<HTMLInputElement>(null)
 
-  const current = selectedGradient || DEFAULT_GRADIENT
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+
+  const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      if (ev.target?.result && typeof ev.target.result === 'string') {
+        setPhoto(ev.target.result)
+        try { setUserItem(uid, 'hero_photo', ev.target.result) } catch {}
+      }
+    }
+    reader.readAsDataURL(file)
+  }
+
+  const updateStat = (i: number, field: keyof StatItem, val: string) => {
+    setStats(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s))
+  }
+
+  const statAccents = ["#60a5fa", "#34d399", "#f472b6", "#fbbf24"]
 
   return (
-    <div className="fixed inset-0 z-50" onClick={onClose}>
-      <div
-        className="fixed left-16 top-16 w-72 rounded-2xl shadow-2xl border overflow-hidden"
-        style={{ background: bg, borderColor: border }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: border }}>
-          <div>
-            <p className={`font-bold text-sm ${textColor}`}>Cores Globais</p>
-            <p className={`text-xs ${subColor}`}>Selecione o gradiente do sistema</p>
+    <div
+      className="relative overflow-hidden rounded-2xl text-white"
+      style={{
+        background: gradientCss,
+        width: "1565px",
+        height: "759px",
+        maxWidth: "100%",
+        padding: "48px 64px 36px",
+        boxSizing: "border-box",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+      }}
+    >
+      <div className="absolute inset-0 pointer-events-none">
+        <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/10 blur-3xl" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-violet-400/20 blur-3xl" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-white/5 blur-3xl" />
+      </div>
+
+      <div className="relative flex flex-row items-center gap-6">
+        <div
+          className="w-36 h-36 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 cursor-pointer relative group overflow-hidden flex-shrink-0"
+          onClick={() => fileRef.current?.click()}
+        >
+          {photo
+            ? <img src={photo} alt="AF" className="w-full h-full object-cover rounded-full" />
+            : <span className="text-5xl font-black">AF</span>
+          }
+          <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+            <Camera size={22} className="text-white" />
           </div>
-          <button onClick={onClose} className={`p-1.5 rounded-lg transition-colors ${btnHover}`}>
-            <X size={16} />
-          </button>
+        </div>
+        <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
+
+        <div className="flex-1 text-center px-6">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Sparkles size={16} className="text-blue-200" />
+            <EditableField value={tagline} onChange={setTagline} className="text-sm font-medium text-blue-200 uppercase tracking-widest" />
+          </div>
+          <h1 className="leading-tight mb-3">
+            <EditableField value={companyName} onChange={setCompanyName} className="text-5xl font-extrabold text-white" />
+          </h1>
+          <div className="mb-3">
+            <EditableField value={subtitle} onChange={setSubtitle} className="text-xl text-blue-100 font-light" />
+          </div>
+          <div className="max-w-2xl mx-auto">
+            <EditableField value={description} onChange={setDescription} className="text-sm text-blue-200/80 leading-relaxed" multiline />
+          </div>
         </div>
 
-        <div className="px-4 pt-3 pb-2">
-          <p className={`text-[10px] uppercase tracking-wider mb-2 ${groupColor}`}>Padrão do Sistema</p>
-          <button
-            onClick={() => onSelect(DEFAULT_GRADIENT)}
-            className="relative w-full h-10 rounded-xl overflow-hidden hover:opacity-90 transition-all hover:scale-[1.02]"
-            style={{ background: DEFAULT_GRADIENT.css }}
-            title={DEFAULT_GRADIENT.label}
-          >
-            {current.id === DEFAULT_GRADIENT.id && (
-              <div className="absolute inset-0 flex items-center justify-center">
-                <Check size={16} className="text-white drop-shadow-lg" />
-              </div>
-            )}
-            <span className="absolute bottom-1.5 right-2 text-[10px] text-white/80 font-medium">
-              {DEFAULT_GRADIENT.label}
-            </span>
-          </button>
+        <div className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-5 py-4 border border-white/20 flex-shrink-0">
+          <Clock size={18} className="text-blue-200" />
+          <div className="text-right">
+            <p className="text-sm text-blue-200">Última atualização</p>
+            <p className="text-2xl font-bold leading-tight">{time}</p>
+            <p className="text-sm text-blue-200">{date}</p>
+          </div>
         </div>
+      </div>
 
-        <div className="px-4 pb-4 space-y-4 max-h-80 overflow-y-auto">
-          {GRADIENT_GROUPS.map((group) => (
-            <div key={group.label}>
-              <p className={`text-[10px] uppercase tracking-wider mb-2 ${groupColor}`}>{group.label}</p>
-              <div className="grid grid-cols-7 gap-1.5">
-                {group.items.map((g) => (
-                  <button
-                    key={g.id}
-                    onClick={() => onSelect(g)}
-                    title={g.label}
-                    className="relative h-9 rounded-lg overflow-hidden hover:scale-110 transition-transform"
-                    style={{ background: g.css }}
-                  >
-                    {current.id === g.id && (
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20">
-                        <Check size={10} className="text-white drop-shadow" />
-                      </div>
-                    )}
-                  </button>
-                ))}
+      <div className="relative flex divide-x divide-white/20 border-t border-white/20 pt-6">
+        {stats.map((s, i) => {
+          const isHov = hoveredStat === i
+          return (
+            <div
+              key={i}
+              className="flex-1 text-center px-6 cursor-pointer select-none"
+              style={{ transition: 'transform 0.2s ease', transform: isHov ? 'scale(1.1)' : 'scale(1)' }}
+              onMouseEnter={() => setHoveredStat(i)}
+              onMouseLeave={() => setHoveredStat(null)}
+            >
+              <div
+                className="text-4xl font-extrabold leading-tight"
+                style={{
+                  color: isHov ? statAccents[i] : 'white',
+                  textShadow: isHov ? `0 0 32px ${statAccents[i]}90` : 'none',
+                  transition: 'color 0.2s, text-shadow 0.2s',
+                }}
+              >
+                <EditableField value={s.value} onChange={v => updateStat(i, 'value', v)} className="font-extrabold" />
               </div>
+              <p
+                className="text-sm mt-1 font-medium"
+                style={{
+                  color: isHov ? statAccents[i] : 'rgba(255,255,255,0.75)',
+                  transition: 'color 0.2s',
+                }}
+              >
+                <EditableField value={s.label} onChange={v => updateStat(i, 'label', v)} className="text-sm font-medium" />
+              </p>
             </div>
-          ))}
-        </div>
-
-        <div className="px-4 pb-4">
-          <p className={`text-[10px] uppercase tracking-wider mb-2 ${groupColor}`}>Selecionado</p>
-          <div className="h-8 rounded-xl w-full" style={{ background: current.css }} />
-          <p className={`text-[10px] mt-1 text-center ${subColor}`}>{current.label}</p>
-        </div>
+          )
+        })}
       </div>
     </div>
   )
