@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react"
 import { CheckCircle2, Clock, Circle, X, ChevronRight, Calendar, BarChart2, Pencil, Check } from "lucide-react"
+import { useAuth } from "../../../context/AuthContext"
 
 type Status = 'done' | 'in_progress' | 'pending'
 interface Acao { id: number; periodo: string; titulo: string; objetivo: string; canal: string; status: Status }
@@ -44,12 +45,13 @@ const cardBase: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-function EditableField({ value, onChange, style, multiline = false, pencilSize = 9 }: {
+function EditableField({ value, onChange, style, multiline = false, pencilSize = 9, isAdmin = false }: {
   value: string
   onChange: (v: string) => void
   style?: React.CSSProperties
   multiline?: boolean
   pencilSize?: number
+  isAdmin?: boolean
 }) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft]     = useState(value)
@@ -73,6 +75,10 @@ function EditableField({ value, onChange, style, multiline = false, pencilSize =
     fontFamily: 'inherit',
     resize: 'none' as const,
     textDecoration: 'none',
+  }
+
+  if (!isAdmin) {
+    return <span style={style}>{value}</span>
   }
 
   if (editing) {
@@ -106,14 +112,15 @@ function EditableField({ value, onChange, style, multiline = false, pencilSize =
   )
 }
 
-function EditableLabel({ value, onChange, style }: {
-  value: string; onChange: (v: string) => void; style?: React.CSSProperties
+function EditableLabel({ value, onChange, style, isAdmin = false }: {
+  value: string; onChange: (v: string) => void; style?: React.CSSProperties; isAdmin?: boolean
 }) {
   return (
     <EditableField
       value={value}
       onChange={onChange}
       pencilSize={8}
+      isAdmin={isAdmin}
       style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', ...style }}
     />
   )
@@ -147,50 +154,55 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
   )
 }
 
-function AcaoRow({ a, onToggle, onEdit }: {
+function AcaoRow({ a, onToggle, onEdit, isAdmin = false }: {
   a: Acao
   onToggle: () => void
   onEdit: (f: 'titulo' | 'objetivo' | 'canal' | 'periodo', v: string) => void
+  isAdmin?: boolean
 }) {
   return (
     <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', marginBottom: 4, border: '1px solid rgba(255,255,255,0.07)' }}>
-      <div onClick={e => { e.stopPropagation(); onToggle() }} style={{ marginTop: 2, cursor: 'pointer', flexShrink: 0 }}>
+      <div onClick={e => { if (!isAdmin) return; e.stopPropagation(); onToggle() }} style={{ marginTop: 2, cursor: isAdmin ? 'pointer' : 'default', flexShrink: 0 }}>
         <StatusIcon status={a.status} size={14} />
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: 3 }}>
-          <EditableField value={a.titulo} onChange={v => onEdit('titulo', v)}
+          <EditableField value={a.titulo} onChange={v => onEdit('titulo', v)} isAdmin={isAdmin}
             style={{ color: a.status === 'done' ? 'rgba(255,255,255,0.4)' : '#fff', fontSize: 12, fontWeight: 600, textDecoration: a.status === 'done' ? 'line-through' : 'none' }} />
         </div>
         <div style={{ display: 'flex', alignItems: 'flex-start' }}>
-          <EditableField value={a.objetivo} onChange={v => onEdit('objetivo', v)} multiline
+          <EditableField value={a.objetivo} onChange={v => onEdit('objetivo', v)} multiline isAdmin={isAdmin}
             style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, lineHeight: '1.5' }} />
         </div>
       </div>
       <div style={{ flexShrink: 0, marginTop: 2 }}>
-        <EditableField value={a.canal} onChange={v => onEdit('canal', v)}
+        <EditableField value={a.canal} onChange={v => onEdit('canal', v)} isAdmin={isAdmin}
           style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)', background: 'rgba(255,255,255,0.07)', borderRadius: 6, padding: '2px 6px', whiteSpace: 'nowrap' }} />
       </div>
     </div>
   )
 }
 
-function AcaoChip({ a, onToggle, onEdit }: {
+function AcaoChip({ a, onToggle, onEdit, isAdmin = false }: {
   a: Acao
   onToggle: () => void
   onEdit: (f: 'titulo', v: string) => void
+  isAdmin?: boolean
 }) {
   const color = a.status === 'done' ? '#34d399' : a.status === 'in_progress' ? '#38bdf8' : 'rgba(255,255,255,0.4)'
   const icon  = a.status === 'done' ? '✓' : a.status === 'in_progress' ? '◐' : '○'
   return (
     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, color, background: 'rgba(255,255,255,0.05)', borderRadius: 6, padding: '3px 8px', border: '1px solid rgba(255,255,255,0.08)' }}>
-      <span onClick={e => { e.stopPropagation(); onToggle() }} style={{ cursor: 'pointer', flexShrink: 0 }}>{icon}</span>
-      <EditableField value={a.titulo} onChange={v => onEdit('titulo', v)} pencilSize={8} style={{ color, fontSize: 10 }} />
+      <span onClick={e => { if (!isAdmin) return; e.stopPropagation(); onToggle() }} style={{ cursor: isAdmin ? 'pointer' : 'default', flexShrink: 0 }}>{icon}</span>
+      <EditableField value={a.titulo} onChange={v => onEdit('titulo', v)} pencilSize={8} isAdmin={isAdmin} style={{ color, fontSize: 10 }} />
     </span>
   )
 }
 
 export default function HeaderMiniCharts() {
+  const { user } = useAuth()
+  const isAdmin = user?.isAdmin ?? false
+
   const [acoes, setAcoes]       = useState<Acao[]>(ACOES_INICIAL)
   const [modal, setModal]       = useState<'execucao' | 'periodos' | 'canais' | null>(null)
   const [expanded, setExpanded] = useState<'execucao' | 'periodos' | 'canais' | null>(null)
@@ -258,7 +270,7 @@ export default function HeaderMiniCharts() {
         <div style={{ ...cardBase, border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('execucao')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <EditableLabel value={labelProgresso} onChange={setLabelProgresso} />
+            <EditableLabel value={labelProgresso} onChange={setLabelProgresso} isAdmin={isAdmin} />
             <span style={{ background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '2px 10px', border: '1px solid rgba(52,211,153,0.35)', flexShrink: 0 }}>{pct}%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
@@ -286,7 +298,7 @@ export default function HeaderMiniCharts() {
                     <div style={{ height: doneH, background: '#34d399', transition: 'height 0.3s' }} />
                     <div style={{ flex: 1, background: 'rgba(255,255,255,0.15)' }} />
                   </div>
-                  <EditableField value={d.label} onChange={v => editPeriodo(i, v)} pencilSize={7}
+                  <EditableField value={d.label} onChange={v => editPeriodo(i, v)} pencilSize={7} isAdmin={isAdmin}
                     style={{ fontSize: exp('execucao') ? 9 : 7, color: 'rgba(255,255,255,0.5)', lineHeight: '1' }} />
                   {exp('execucao') && <span style={{ fontSize: 10, color: '#34d399', fontWeight: 700 }}>{d.done}/{d.novas}</span>}
                 </div>
@@ -306,7 +318,7 @@ export default function HeaderMiniCharts() {
         <div style={{ ...cardBase, border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('periodos')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <EditableLabel value={labelCalendario} onChange={setLabelCalendario} />
+            <EditableLabel value={labelCalendario} onChange={setLabelCalendario} isAdmin={isAdmin} />
             <Calendar size={13} color="rgba(255,255,255,0.65)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: exp('periodos') ? 16 : 10, transition: 'gap 0.3s' }}>
@@ -329,7 +341,7 @@ export default function HeaderMiniCharts() {
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={{ width: exp('periodos') ? 54 : 44, flexShrink: 0 }}>
-                    <EditableField value={p.label} onChange={v => editPeriodo(i, v)} pencilSize={8}
+                    <EditableField value={p.label} onChange={v => editPeriodo(i, v)} pencilSize={8} isAdmin={isAdmin}
                       style={{ fontSize: exp('periodos') ? 12 : 10, color: '#fff', fontWeight: 600 }} />
                   </span>
                   <div style={{ flex: 1, height: exp('periodos') ? 12 : 9, borderRadius: 99, background: 'rgba(255,255,255,0.12)', overflow: 'hidden', display: 'flex', transition: 'height 0.3s' }}>
@@ -343,7 +355,8 @@ export default function HeaderMiniCharts() {
                     {p.acoes.map(a => (
                       <AcaoChip key={a.id} a={a}
                         onToggle={() => toggleAcao(a.id)}
-                        onEdit={(f, v) => editAcao(a.id, f, v)} />
+                        onEdit={(f, v) => editAcao(a.id, f, v)}
+                        isAdmin={isAdmin} />
                     ))}
                   </div>
                 )}
@@ -360,14 +373,14 @@ export default function HeaderMiniCharts() {
         <div style={{ ...cardBase, border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('canais')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <EditableLabel value={labelCanais} onChange={setLabelCanais} />
+            <EditableLabel value={labelCanais} onChange={setLabelCanais} isAdmin={isAdmin} />
             <BarChart2 size={13} color="rgba(255,255,255,0.65)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: exp('canais') ? 18 : 10, transition: 'gap 0.3s' }}>
             {canaisData.map((c, i) => (
               <div key={i}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: exp('canais') ? 7 : 4, transition: 'margin 0.3s' }}>
-                  <EditableField value={c.displayLabel} onChange={v => editCanalLabel(i, v)} pencilSize={8}
+                  <EditableField value={c.displayLabel} onChange={v => editCanalLabel(i, v)} pencilSize={8} isAdmin={isAdmin}
                     style={{ fontSize: exp('canais') ? 13 : 10, color: c.color, fontWeight: 700 }} />
                   <span style={{ fontSize: exp('canais') ? 12 : 10, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>{c.executado}/{c.planejado}</span>
                 </div>
@@ -381,7 +394,8 @@ export default function HeaderMiniCharts() {
                       return acoes.filter(a => a.canal.includes(match)).map(a => (
                         <AcaoChip key={a.id} a={a}
                           onToggle={() => toggleAcao(a.id)}
-                          onEdit={(f, v) => editAcao(a.id, f, v)} />
+                          onEdit={(f, v) => editAcao(a.id, f, v)}
+                          isAdmin={isAdmin} />
                       ))
                     })()}
                   </div>
@@ -406,7 +420,8 @@ export default function HeaderMiniCharts() {
                 {p.acoes.map(a => (
                   <AcaoRow key={a.id} a={a}
                     onToggle={() => toggleAcao(a.id)}
-                    onEdit={(f, v) => editAcao(a.id, f, v)} />
+                    onEdit={(f, v) => editAcao(a.id, f, v)}
+                    isAdmin={isAdmin} />
                 ))}
               </div>
             ))}
@@ -420,14 +435,15 @@ export default function HeaderMiniCharts() {
             {periodos.map((p, i) => (
               <div key={p.orig} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: 14, border: '1px solid rgba(255,255,255,0.08)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-                  <EditableField value={p.label} onChange={v => editPeriodo(i, v)}
+                  <EditableField value={p.label} onChange={v => editPeriodo(i, v)} isAdmin={isAdmin}
                     style={{ color: '#fff', fontWeight: 700, fontSize: 13 }} />
                   <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, flexShrink: 0 }}>{p.done} concluídas · {p.inProg} em andamento · {p.pending} pendentes</span>
                 </div>
                 {p.acoes.map(a => (
                   <AcaoRow key={a.id} a={a}
                     onToggle={() => toggleAcao(a.id)}
-                    onEdit={(f, v) => editAcao(a.id, f, v)} />
+                    onEdit={(f, v) => editAcao(a.id, f, v)}
+                    isAdmin={isAdmin} />
                 ))}
               </div>
             ))}
@@ -444,7 +460,7 @@ export default function HeaderMiniCharts() {
               return (
                 <div key={i}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                    <EditableField value={c.displayLabel} onChange={v => editCanalLabel(i, v)}
+                    <EditableField value={c.displayLabel} onChange={v => editCanalLabel(i, v)} isAdmin={isAdmin}
                       style={{ color: c.color, fontWeight: 700, fontSize: 13 }} />
                     <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, flexShrink: 0 }}>{c.executado}/{c.planejado} ações</span>
                   </div>
@@ -454,7 +470,8 @@ export default function HeaderMiniCharts() {
                   {acoesCanal.map(a => (
                     <AcaoRow key={a.id} a={a}
                       onToggle={() => toggleAcao(a.id)}
-                      onEdit={(f, v) => editAcao(a.id, f, v)} />
+                      onEdit={(f, v) => editAcao(a.id, f, v)}
+                      isAdmin={isAdmin} />
                   ))}
                 </div>
               )
