@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react"
-import { Clock, Pencil, Check, Camera } from "lucide-react"
+import { Sparkles, Clock, Pencil, Check, Camera } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
 import HeaderMiniCharts from "./HeaderMiniCharts"
 
@@ -61,6 +61,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const gradientCss = accentGradient?.css || 'linear-gradient(135deg, #3B6AF5, #7B35EF)'
   const [photo, setPhoto] = useState<string | null>(null)
   const [companyName, setCompanyName] = useState("AF Consultoria & Projetos")
+  const [tagline, setTagline] = useState("Inteligência Estratégica de Marketing")
   const [subtitle, setSubtitle] = useState("Centro de Inteligência de Marketing Estratégico 2026")
   const [description, setDescription] = useState(
     "Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados."
@@ -123,6 +124,10 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
 
           <div className="min-w-0">
+            <div className="flex items-center gap-1.5 mb-0.5">
+              <Sparkles size={11} className="text-blue-200 flex-shrink-0" />
+              <EditableField value={tagline} onChange={setTagline} className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest" />
+            </div>
             <h1 className="leading-tight">
               <EditableField value={companyName} onChange={setCompanyName} className="text-xl font-extrabold text-white" />
             </h1>
