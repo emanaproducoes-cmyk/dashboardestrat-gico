@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
 import {
-  signInWithRedirect, getRedirectResult,
-  signOut, onAuthStateChanged,
+  signInWithPopup, signOut, onAuthStateChanged,
   signInWithEmailAndPassword, createUserWithEmailAndPassword,
   updateProfile, type User as FirebaseUser
 } from "firebase/auth"
@@ -52,7 +51,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getRedirectResult(auth).catch(() => {})
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u ? toUser(u) : null)
       setLoading(false)
@@ -62,9 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loginWithGoogle = useCallback(async (): Promise<boolean> => {
     try {
-      await signInWithRedirect(auth, googleProvider)
-      return true
-    } catch { return false }
+      const result = await signInWithPopup(auth, googleProvider)
+      if (result.user) {
+        setUser(toUser(result.user))
+        return true
+      }
+      return false
+    } catch (e: any) {
+      if (e.code === "auth/popup-closed-by-user") return false
+      console.error("Google login error:", e)
+      return false
+    }
   }, [])
 
   const loginWithEmail = useCallback(async (email: string, password: string) => {
