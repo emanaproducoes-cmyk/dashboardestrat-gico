@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react"
 import { CheckCircle2, Clock, Circle, X, ChevronRight, Calendar, BarChart2, Pencil, Check } from "lucide-react"
-import { useAuth } from "../../../context/AuthContext"
+import { useAuth } from "../../lib/AuthContext"
 
 type Status = 'done' | 'in_progress' | 'pending'
 interface Acao { id: number; periodo: string; titulo: string; objetivo: string; canal: string; status: Status }
@@ -77,9 +77,7 @@ function EditableField({ value, onChange, style, multiline = false, pencilSize =
     textDecoration: 'none',
   }
 
-  if (!isAdmin) {
-    return <span style={style}>{value}</span>
-  }
+  if (!isAdmin) return <span style={style}>{value}</span>
 
   if (editing) {
     return (
@@ -116,13 +114,8 @@ function EditableLabel({ value, onChange, style, isAdmin = false }: {
   value: string; onChange: (v: string) => void; style?: React.CSSProperties; isAdmin?: boolean
 }) {
   return (
-    <EditableField
-      value={value}
-      onChange={onChange}
-      pencilSize={8}
-      isAdmin={isAdmin}
-      style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', ...style }}
-    />
+    <EditableField value={value} onChange={onChange} pencilSize={8} isAdmin={isAdmin}
+      style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', ...style }} />
   )
 }
 
@@ -155,8 +148,7 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
 }
 
 function AcaoRow({ a, onToggle, onEdit, isAdmin = false }: {
-  a: Acao
-  onToggle: () => void
+  a: Acao; onToggle: () => void
   onEdit: (f: 'titulo' | 'objetivo' | 'canal' | 'periodo', v: string) => void
   isAdmin?: boolean
 }) {
@@ -184,8 +176,7 @@ function AcaoRow({ a, onToggle, onEdit, isAdmin = false }: {
 }
 
 function AcaoChip({ a, onToggle, onEdit, isAdmin = false }: {
-  a: Acao
-  onToggle: () => void
+  a: Acao; onToggle: () => void
   onEdit: (f: 'titulo', v: string) => void
   isAdmin?: boolean
 }) {
