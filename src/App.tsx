@@ -1,6 +1,8 @@
 import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { AuthProvider, useAuth } from './lib/AuthContext'
+import LoginPage from './pages/LoginPage'
 import Layout from './Layout'
 import Home from './pages/Home'
 import Canais from './pages/Canais'
@@ -12,12 +14,7 @@ import ProvaSocial from './pages/ProvaSocial'
 import Roadmap from './pages/Roadmap'
 
 const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnWindowFocus: false,
-      retry: 1,
-    },
-  },
+  defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
 })
 
 function PageNotFound() {
@@ -26,10 +23,7 @@ function PageNotFound() {
       <div className="text-center">
         <h1 className="text-6xl font-light text-slate-300">404</h1>
         <p className="text-slate-600 mt-4">Página não encontrada</p>
-        <button
-          onClick={() => window.location.href = '/'}
-          className="mt-6 px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
-        >
+        <button onClick={() => window.location.href = '/'} className="mt-6 px-4 py-2 text-sm bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
           Ir para o início
         </button>
       </div>
@@ -37,22 +31,34 @@ function PageNotFound() {
   )
 }
 
+function AppRoutes() {
+  const { user } = useAuth()
+
+  if (!user) return <LoginPage />
+
+  return (
+    <Router>
+      <Routes>
+        <Route path="/" element={<Layout currentPageName="Home"><Home /></Layout>} />
+        <Route path="/Canais" element={<Layout currentPageName="Canais"><Canais /></Layout>} />
+        <Route path="/Conteudo" element={<Layout currentPageName="Conteudo"><Conteudo /></Layout>} />
+        <Route path="/Funil" element={<Layout currentPageName="Funil"><Funil /></Layout>} />
+        <Route path="/Insights" element={<Layout currentPageName="Insights"><Insights /></Layout>} />
+        <Route path="/KPIs" element={<Layout currentPageName="KPIs"><KPIs /></Layout>} />
+        <Route path="/ProvaSocial" element={<Layout currentPageName="ProvaSocial"><ProvaSocial /></Layout>} />
+        <Route path="/Roadmap" element={<Layout currentPageName="Roadmap"><Roadmap /></Layout>} />
+        <Route path="*" element={<PageNotFound />} />
+      </Routes>
+    </Router>
+  )
+}
+
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <Routes>
-          <Route path="/" element={<Layout currentPageName="Home"><Home /></Layout>} />
-          <Route path="/Canais" element={<Layout currentPageName="Canais"><Canais /></Layout>} />
-          <Route path="/Conteudo" element={<Layout currentPageName="Conteudo"><Conteudo /></Layout>} />
-          <Route path="/Funil" element={<Layout currentPageName="Funil"><Funil /></Layout>} />
-          <Route path="/Insights" element={<Layout currentPageName="Insights"><Insights /></Layout>} />
-          <Route path="/KPIs" element={<Layout currentPageName="KPIs"><KPIs /></Layout>} />
-          <Route path="/ProvaSocial" element={<Layout currentPageName="ProvaSocial"><ProvaSocial /></Layout>} />
-          <Route path="/Roadmap" element={<Layout currentPageName="Roadmap"><Roadmap /></Layout>} />
-          <Route path="*" element={<PageNotFound />} />
-        </Routes>
-      </Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
     </QueryClientProvider>
   )
 }
