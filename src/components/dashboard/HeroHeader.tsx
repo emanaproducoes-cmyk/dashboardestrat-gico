@@ -101,17 +101,18 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-8 text-white" style={{ background: gradientCss }}>
+
+      {/* Blobs de fundo — idênticos ao HeroHeader */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-violet-400/30 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-blue-300/20 blur-3xl" />
       </div>
 
-      {/* — Mesmo layout do HeroHeader: flex-col md:flex-row — */}
+      {/* Linha principal — flex-col md:flex-row idêntico ao HeroHeader */}
       <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
 
-          {/* Foto — w-20 h-20 igual ao HeroHeader */}
+          {/* Avatar — w-20 h-20 idêntico ao HeroHeader, com câmera editável */}
           <div
             className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 cursor-pointer relative group overflow-hidden flex-shrink-0"
             onClick={() => fileRef.current?.click()}
@@ -127,31 +128,35 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
 
           <div>
-            {/* Tagline — igual ao HeroHeader */}
+            {/* Tagline — idêntico ao HeroHeader */}
             <div className="flex items-center gap-2 mb-1">
-              <Sparkles size={14} className="text-blue-200 flex-shrink-0" />
-              <EditableField value={tagline} onChange={setTagline} className="text-xs font-medium text-blue-200 uppercase tracking-wider" />
+              <Sparkles size={14} className="text-blue-200" />
+              <EditableField
+                value={tagline}
+                onChange={setTagline}
+                className="text-xs font-medium text-blue-200 tracking-wider uppercase"
+              />
             </div>
 
-            {/* Título — text-2xl md:text-3xl igual ao HeroHeader */}
-            <h1 className="leading-tight">
+            {/* Título — text-2xl md:text-3xl font-bold idêntico ao HeroHeader */}
+            <h1 className="text-2xl md:text-3xl font-bold">
               <EditableField value={companyName} onChange={setCompanyName} className="text-2xl md:text-3xl font-bold text-white" />
             </h1>
 
-            {/* Subtítulo — text-sm igual ao HeroHeader */}
-            <p className="mt-1 max-w-xl">
+            {/* Subtítulo — text-sm text-blue-100 mt-1 max-w-xl idêntico ao HeroHeader */}
+            <p className="text-sm text-blue-100 mt-1 max-w-xl">
               <EditableField value={subtitle} onChange={setSubtitle} className="text-sm text-blue-100" />
             </p>
 
-            {/* Descrição — text-xs igual ao HeroHeader */}
-            <p className="mt-1 max-w-lg hidden md:block">
+            {/* Descrição — text-xs text-blue-200/70 mt-1 max-w-lg hidden md:block idêntico ao HeroHeader */}
+            <p className="text-xs text-blue-200/70 mt-1 max-w-lg hidden md:block">
               <EditableField value={description} onChange={setDescription} className="text-xs text-blue-200/70 leading-relaxed" multiline />
             </p>
           </div>
         </div>
 
-        {/* Relógio — px-4 py-3 e text-lg igual ao HeroHeader */}
-        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20 flex-shrink-0">
+        {/* Relógio — px-4 py-3 text-lg idêntico ao HeroHeader */}
+        <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
           <Clock size={14} className="text-blue-200" />
           <div className="text-right">
             <p className="text-xs text-blue-200">Última atualização</p>
@@ -161,11 +166,11 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         </div>
       </div>
 
-      {/* Stats — mt-8, gap-6, text-3xl md:text-4xl igual ao HeroHeader */}
+      {/* Stats — mt-8 gap-6 text-3xl md:text-4xl idêntico ao HeroHeader */}
       <div className="relative mt-8 flex flex-wrap gap-6 md:gap-0 md:divide-x divide-white/20">
         {stats.map((s, i) => (
           <div key={i} className="md:flex-1 md:text-center px-4 first:pl-0">
-            <div className="text-3xl md:text-4xl font-extrabold tracking-tight leading-none">
+            <div className="text-3xl md:text-4xl font-extrabold tracking-tight">
               <EditableField value={s.value} onChange={v => updateStat(i, 'value', v)} className="text-3xl md:text-4xl font-extrabold text-white" />
             </div>
             <p className="text-xs text-blue-200 mt-0.5">
@@ -175,9 +180,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         ))}
       </div>
 
-      <div className="relative">
-        <HeaderMiniCharts />
-      </div>
+      <HeaderMiniCharts />
     </div>
   )
 }
