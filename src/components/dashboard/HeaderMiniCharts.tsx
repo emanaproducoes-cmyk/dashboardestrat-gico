@@ -1,9 +1,27 @@
-import React, { useState, useRef, useEffect } from "react"
+import React, { useState, useRef, useEffect, useCallback } from "react"
 import { CheckCircle2, Clock, Circle, X, ChevronRight, Calendar, BarChart2, Pencil, Check } from "lucide-react"
 import { useAuth } from "../../lib/AuthContext"
 
 type Status = 'done' | 'in_progress' | 'pending'
 interface Acao { id: number; periodo: string; titulo: string; objetivo: string; canal: string; status: Status }
+
+function storageKey(userId: string | undefined, suffix: string) {
+  return `af_dashboard_${userId ?? 'guest'}_${suffix}`
+}
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    if (raw !== null) return JSON.parse(raw) as T
+  } catch {}
+  return fallback
+}
+
+function saveToStorage<T>(key: string, value: T) {
+  try {
+    localStorage.setItem(key, JSON.stringify(value))
+  } catch {}
+}
 
 const ACOES_INICIAL: Acao[] = [
   { id: 1,  periodo: "Abril",   titulo: 'Lançamento LinkedIn',                    objetivo: 'Habilitar novo canal do mixchannel e iniciar crescimento orgânico qualificado.',           canal: 'LinkedIn',   status: 'done' },
@@ -28,7 +46,7 @@ const ACOES_INICIAL: Acao[] = [
   { id: 20, periodo: "Nov/Dez", titulo: 'Manutenção e SEO do Blog/Site',          objetivo: 'Otimizar indexação dos conteúdos técnicos para manter a AF como referência em FNO.',    canal: 'Blog/Site',  status: 'pending' },
 ]
 
-const PERIODOS_LABELS = ["Abril", "Maio", "Jun/Jul", "Ago/Out", "Nov/Dez"]
+const PERIODOS_LABELS_DEFAULT = ["Abril", "Maio", "Jun/Jul", "Ago/Out", "Nov/Dez"]
 const CANAIS_DEF = [
   { canal: "LinkedIn",  color: "#38bdf8" },
   { canal: "YouTube",   color: "#fb923c" },
@@ -141,37 +159,117 @@ function AcaoChip({ a, onToggle, onEdit, isAdmin = false }: { a: Acao; onToggle:
   )
 }
 
+function SavedBadge({ visible }: { visible: boolean }) {
+  return (
+    <span style={{
+      position: 'absolute', top: -10, right: 0,
+      background: 'rgba(52,211,153,0.12)',
+      border: '1px solid rgba(52,211,153,0.35)',
+      borderRadius: 99,
+      padding: '2px 10px',
+      fontSize: 9,
+      color: '#34d399',
+      fontWeight: 700,
+      letterSpacing: '0.07em',
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 0.6s ease',
+      pointerEvents: 'none',
+      zIndex: 10,
+    }}>
+      ✓ salvo
+    </span>
+  )
+}
+
 export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
+  const uid = user?.id as string | undefined
 
-  const [acoes, setAcoes]       = useState<Acao[]>(ACOES_INICIAL)
-  const [modal, setModal]       = useState<'execucao' | 'periodos' | 'canais' | null>(null)
+  const [acoes, setAcoes] = useState<Acao[]>(() =>
+    loadFromStorage(storageKey(uid, 'acoes'), ACOES_INICIAL)
+  )
+  const [labelProgresso,  setLabelProgresso]  = useState(() =>
+    loadFromStorage(storageKey(uid, 'label_progresso'),  'Progresso das Ações')
+  )
+  const [labelCalendario, setLabelCalendario] = useState(() =>
+    loadFromStorage(storageKey(uid, 'label_calendario'), 'Calendário de Ações')
+  )
+  const [labelCanais, setLabelCanais] = useState(() =>
+    loadFromStorage(storageKey(uid, 'label_canais'), 'Canais de Atuação')
+  )
+  const [periodoLabels, setPeriodoLabels] = useState<string[]>(() =>
+    loadFromStorage(storageKey(uid, 'periodo_labels'), [...PERIODOS_LABELS_DEFAULT])
+  )
+  const [canaisLabels, setCanaisLabels] = useState<string[]>(() =>
+    loadFromStorage(storageKey(uid, 'canais_labels'), CANAIS_DEF.map(c => c.canal))
+  )
+
+  const [modal,    setModal]    = useState<'execucao' | 'periodos' | 'canais' | null>(null)
   const [expanded, setExpanded] = useState<'execucao' | 'periodos' | 'canais' | null>(null)
-  const [hoveredBar, setHoveredBar]         = useState<number | null>(null)
+  const [hoveredBar,     setHoveredBar]     = useState<number | null>(null)
   const [hoveredPeriodo, setHoveredPeriodo] = useState<number | null>(null)
+  const [savedFlag, setSavedFlag] = useState(false)
 
-  const [labelProgresso,  setLabelProgresso]  = useState('Progresso das Ações')
-  const [labelCalendario, setLabelCalendario] = useState('Calendário de Ações')
-  const [labelCanais,     setLabelCanais]     = useState('Canais de Atuação')
+  const flashSaved = useCallback(() => {
+    setSavedFlag(true)
+    setTimeout(() => setSavedFlag(false), 1800)
+  }, [])
 
-  const [periodoLabels, setPeriodoLabels] = useState<string[]>([...PERIODOS_LABELS])
-  const editPeriodo = (i: number, v: string) => setPeriodoLabels(prev => prev.map((l, idx) => idx === i ? v : l))
+  useEffect(() => {
+    setAcoes(loadFromStorage(storageKey(uid, 'acoes'), ACOES_INICIAL))
+    setLabelProgresso(loadFromStorage(storageKey(uid, 'label_progresso'),  'Progresso das Ações'))
+    setLabelCalendario(loadFromStorage(storageKey(uid, 'label_calendario'), 'Calendário de Ações'))
+    setLabelCanais(loadFromStorage(storageKey(uid, 'label_canais'), 'Canais de Atuação'))
+    setPeriodoLabels(loadFromStorage(storageKey(uid, 'periodo_labels'), [...PERIODOS_LABELS_DEFAULT]))
+    setCanaisLabels(loadFromStorage(storageKey(uid, 'canais_labels'), CANAIS_DEF.map(c => c.canal)))
+  }, [uid])
 
-  const [canaisLabels, setCanaisLabels] = useState(CANAIS_DEF.map(c => c.canal))
-  const editCanalLabel = (i: number, v: string) => setCanaisLabels(prev => prev.map((l, idx) => idx === i ? v : l))
+  const toggleAcao = (id: number) => {
+    setAcoes(prev => {
+      const next = prev.map(a => a.id !== id ? a : { ...a, status: (a.status === 'done' ? 'pending' : 'done') as Status })
+      saveToStorage(storageKey(uid, 'acoes'), next)
+      flashSaved()
+      return next
+    })
+  }
+
+  const editAcao = (id: number, field: 'titulo' | 'objetivo' | 'canal' | 'periodo', val: string) => {
+    setAcoes(prev => {
+      const next = prev.map(a => a.id !== id ? a : { ...a, [field]: val })
+      saveToStorage(storageKey(uid, 'acoes'), next)
+      flashSaved()
+      return next
+    })
+  }
+
+  const editPeriodo = (i: number, v: string) => {
+    setPeriodoLabels(prev => {
+      const next = prev.map((l, idx) => idx === i ? v : l)
+      saveToStorage(storageKey(uid, 'periodo_labels'), next)
+      flashSaved()
+      return next
+    })
+  }
+
+  const editCanalLabel = (i: number, v: string) => {
+    setCanaisLabels(prev => {
+      const next = prev.map((l, idx) => idx === i ? v : l)
+      saveToStorage(storageKey(uid, 'canais_labels'), next)
+      flashSaved()
+      return next
+    })
+  }
+
+  const handleLabelProgresso  = (v: string) => { setLabelProgresso(v);  saveToStorage(storageKey(uid, 'label_progresso'), v);  flashSaved() }
+  const handleLabelCalendario = (v: string) => { setLabelCalendario(v); saveToStorage(storageKey(uid, 'label_calendario'), v); flashSaved() }
+  const handleLabelCanais     = (v: string) => { setLabelCanais(v);     saveToStorage(storageKey(uid, 'label_canais'), v);     flashSaved() }
 
   const concluidas = acoes.filter(a => a.status === 'done').length
   const pct        = Math.round((concluidas / acoes.length) * 100)
 
-  const toggleAcao = (id: number) =>
-    setAcoes(prev => prev.map(a => a.id !== id ? a : { ...a, status: a.status === 'done' ? 'pending' : 'done' }))
-
-  const editAcao = (id: number, field: 'titulo' | 'objetivo' | 'canal' | 'periodo', val: string) =>
-    setAcoes(prev => prev.map(a => a.id !== id ? a : { ...a, [field]: val }))
-
   const barData = periodoLabels.map((label, idx) => {
-    const orig = PERIODOS_LABELS[idx]
+    const orig = PERIODOS_LABELS_DEFAULT[idx]
     const list = acoes.filter(a => a.periodo === orig)
     const done = list.filter(a => a.status === 'done').length
     return { label, orig, novas: list.length, done }
@@ -185,7 +283,7 @@ export default function HeaderMiniCharts() {
   })
 
   const periodos = periodoLabels.map((label, idx) => {
-    const orig = PERIODOS_LABELS[idx]
+    const orig = PERIODOS_LABELS_DEFAULT[idx]
     return {
       label, orig,
       acoes:   acoes.filter(a => a.periodo === orig),
@@ -204,13 +302,15 @@ export default function HeaderMiniCharts() {
 
   return (
     <>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginTop: 20, marginBottom: 4, alignItems: 'start' }}>
+      <div style={{ position: 'relative', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginTop: 20, marginBottom: 4, alignItems: 'start' }}>
 
-        {/* CARD 1 */}
+        <SavedBadge visible={savedFlag} />
+
+        {/* CARD 1 — Progresso */}
         <div style={{ ...cardBase, border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('execucao')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-            <EditableLabel value={labelProgresso} onChange={setLabelProgresso} isAdmin={isAdmin} />
+            <EditableLabel value={labelProgresso} onChange={handleLabelProgresso} isAdmin={isAdmin} />
             <span style={{ background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '2px 10px', border: '1px solid rgba(52,211,153,0.35)', flexShrink: 0 }}>{pct}%</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 10 }}>
@@ -254,11 +354,11 @@ export default function HeaderMiniCharts() {
           </p>
         </div>
 
-        {/* CARD 2 */}
+        {/* CARD 2 — Calendário */}
         <div style={{ ...cardBase, border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('periodos')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <EditableLabel value={labelCalendario} onChange={setLabelCalendario} isAdmin={isAdmin} />
+            <EditableLabel value={labelCalendario} onChange={handleLabelCalendario} isAdmin={isAdmin} />
             <Calendar size={13} color="rgba(255,255,255,0.65)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: exp('periodos') ? 16 : 10, transition: 'gap 0.3s' }}>
@@ -306,11 +406,11 @@ export default function HeaderMiniCharts() {
           </p>
         </div>
 
-        {/* CARD 3 */}
+        {/* CARD 3 — Canais */}
         <div style={{ ...cardBase, border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('canais')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <EditableLabel value={labelCanais} onChange={setLabelCanais} isAdmin={isAdmin} />
+            <EditableLabel value={labelCanais} onChange={handleLabelCanais} isAdmin={isAdmin} />
             <BarChart2 size={13} color="rgba(255,255,255,0.65)" />
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: exp('canais') ? 18 : 10, transition: 'gap 0.3s' }}>
