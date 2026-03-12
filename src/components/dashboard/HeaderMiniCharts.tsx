@@ -34,34 +34,58 @@ const PERIODOS = [
 ]
 
 const CANAIS = [
-  { canal: "LinkedIn", planejado: 8, executado: 5, color: "#60a5fa" },
-  { canal: "YouTube", planejado: 6, executado: 3, color: "#f87171" },
-  { canal: "Instagram", planejado: 7, executado: 4, color: "#a78bfa" },
-  { canal: "Blog/SEO", planejado: 4, executado: 1, color: "#fbbf24" },
+  { canal: "LinkedIn", planejado: 8, executado: 5, color: "#38bdf8" },
+  { canal: "YouTube", planejado: 6, executado: 3, color: "#fb923c" },
+  { canal: "Instagram", planejado: 7, executado: 4, color: "#e879f9" },
+  { canal: "Blog/SEO", planejado: 4, executado: 1, color: "#facc15" },
 ]
 
 const CUMULATIVO = [
-  { mes: "Abr", total: 4 }, { mes: "Mai", total: 8 }, { mes: "Jun", total: 10 },
-  { mes: "Jul", total: 12 }, { mes: "Ago", total: 13 }, { mes: "Set", total: 14 },
-  { mes: "Out", total: 16 }, { mes: "Nov", total: 18 }, { mes: "Dez", total: 20 },
+  { mes: "Abr", total: 4, novas: 4 },
+  { mes: "Mai", total: 8, novas: 4 },
+  { mes: "Jun", total: 10, novas: 2 },
+  { mes: "Jul", total: 12, novas: 2 },
+  { mes: "Ago", total: 13, novas: 1 },
+  { mes: "Set", total: 14, novas: 1 },
+  { mes: "Out", total: 16, novas: 2 },
+  { mes: "Nov", total: 18, novas: 2 },
+  { mes: "Dez", total: 20, novas: 2 },
 ]
 
 const StatusIcon = ({ status, size = 10 }: { status: string; size?: number }) =>
-  status === 'done' ? <CheckCircle2 size={size} className="text-emerald-400 flex-shrink-0" />
-  : status === 'in_progress' ? <Clock size={size} className="text-blue-400 flex-shrink-0" />
-  : <Circle size={size} className="text-white/20 flex-shrink-0" />
+  status === 'done'
+    ? <CheckCircle2 size={size} className="text-emerald-400 flex-shrink-0" />
+    : status === 'in_progress'
+      ? <Clock size={size} className="text-sky-300 flex-shrink-0" />
+      : <Circle size={size} className="text-white/30 flex-shrink-0" />
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const BarTooltip = ({ active, payload, label }: any) => {
   if (!active || !payload?.length) return null
   return (
-    <div className="bg-gray-900/95 border border-white/20 rounded-lg px-3 py-2 text-xs text-white shadow-xl pointer-events-none">
-      <p className="font-bold mb-1">{label}</p>
+    <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '8px 12px', fontSize: 11, color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', pointerEvents: 'none', minWidth: 130 }}>
+      <p style={{ fontWeight: 700, marginBottom: 4, color: '#e2e8f0' }}>{label}</p>
       {payload.map((p: any, i: number) => (
-        <p key={i} style={{ color: p.color || p.fill || '#fff' }}>{p.name}: <span className="font-bold">{p.value}</span></p>
+        <p key={i} style={{ color: p.fill || p.color || '#fff', margin: '2px 0' }}>
+          {p.name}: <span style={{ fontWeight: 700 }}>{p.value}</span>
+        </p>
       ))}
     </div>
   )
 }
+
+const PeriodoTooltip = ({ label, done, total, acoes }: { label: string; done: number; total: number; acoes: typeof ACOES }) => (
+  <div style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '10px 14px', fontSize: 11, color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.6)', minWidth: 200, maxWidth: 260 }}>
+    <p style={{ fontWeight: 700, marginBottom: 6, color: '#e2e8f0', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: 4 }}>{label} — {done}/{total} concluídas</p>
+    {acoes.map(a => (
+      <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 6, margin: '4px 0' }}>
+        <span style={{ color: a.status === 'done' ? '#34d399' : a.status === 'in_progress' ? '#38bdf8' : 'rgba(255,255,255,0.3)', marginTop: 1, flexShrink: 0 }}>
+          {a.status === 'done' ? '✓' : a.status === 'in_progress' ? '◐' : '○'}
+        </span>
+        <span style={{ color: 'rgba(255,255,255,0.75)', lineHeight: 1.4 }}>{a.titulo}</span>
+      </div>
+    ))}
+  </div>
+)
 
 function DetailModal({ title, onClose, children }: { title: string; onClose: () => void; children: React.ReactNode }) {
   return (
@@ -80,129 +104,164 @@ function DetailModal({ title, onClose, children }: { title: string; onClose: () 
 
 export default function HeaderMiniCharts() {
   const [modal, setModal] = useState<'execucao' | 'periodos' | 'canais' | null>(null)
+  const [hoveredPeriodo, setHoveredPeriodo] = useState<number | null>(null)
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null)
+  const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 })
+
   const concluidas = ACOES.filter(a => a.status === 'done').length
   const emAndamento = ACOES.filter(a => a.status === 'in_progress').length
   const pct = Math.round((concluidas / ACOES.length) * 100)
 
   return (
     <>
-      <div className="grid grid-cols-3 gap-3 mt-5">
+      <div className="grid grid-cols-3 gap-4 mt-6 mb-2">
 
-        {/* CARD 1 — Progresso */}
-        <div className="bg-white/10 border border-white/15 rounded-xl p-3 cursor-pointer transition-all duration-200 hover:bg-white/[0.16] hover:scale-[1.02] hover:border-white/30 group" onClick={() => setModal('execucao')}>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wider">Progresso das Ações</p>
-            <span className="text-[10px] font-bold text-emerald-300 bg-emerald-400/20 rounded-full px-2 py-0.5">{pct}%</span>
+        {/* CARD 1 */}
+        <div className="rounded-2xl p-4 cursor-pointer group transition-all duration-200 hover:scale-[1.02]"
+          style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)' }}
+          onClick={() => setModal('execucao')}>
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Progresso das Ações</p>
+            <span style={{ background: 'rgba(52,211,153,0.25)', color: '#6ee7b7', fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '2px 10px', border: '1px solid rgba(52,211,153,0.4)' }}>{pct}%</span>
           </div>
-          <div className="flex items-baseline gap-1.5 mb-2">
-            <p className="text-2xl font-extrabold text-white leading-none">{concluidas}</p>
-            <p className="text-white/40 text-[10px]">de {ACOES.length} ações concluídas</p>
+          <div className="flex items-baseline gap-2 mb-3">
+            <span style={{ fontSize: 28, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{concluidas}</span>
+            <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.6)' }}>de {ACOES.length} ações concluídas</span>
           </div>
-          <div className="flex items-end gap-1 mb-2 h-10">
+          <div className="flex items-end gap-1 mb-3" style={{ height: 48 }}>
             {CUMULATIVO.map((c, i) => {
-              const prev = i === 0 ? 0 : CUMULATIVO[i - 1].total
-              const novas = c.total - prev
               const done = c.total <= concluidas
               const active = !done && c.total <= concluidas + emAndamento
+              const barColor = done ? '#34d399' : active ? '#38bdf8' : 'rgba(255,255,255,0.18)'
+              const isHov = hoveredBar === i
               return (
-                <div key={i} className="flex-1 flex flex-col items-center gap-0.5 justify-end">
-                  <div className="w-full rounded-t-sm" style={{
-                    height: `${novas * 10}px`,
-                    background: done ? '#34d399' : active ? '#60a5fa' : 'rgba(255,255,255,0.12)'
-                  }} />
-                  <span className="text-[7px] text-white/35">{c.mes}</span>
+                <div key={i} className="flex-1 flex flex-col items-center justify-end gap-1"
+                  onMouseEnter={e => { setHoveredBar(i); setTooltipPos({ x: e.clientX, y: e.clientY }) }}
+                  onMouseMove={e => setTooltipPos({ x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHoveredBar(null)}>
+                  <div style={{ width: '100%', height: `${c.novas * 10}px`, background: barColor, borderRadius: '3px 3px 0 0', transition: 'all 0.15s', transform: isHov ? 'scaleY(1.08)' : 'scaleY(1)', transformOrigin: 'bottom', boxShadow: isHov ? `0 0 8px ${barColor}` : 'none' }} />
+                  <span style={{ fontSize: 7, color: 'rgba(255,255,255,0.5)', lineHeight: 1 }}>{c.mes}</span>
                 </div>
               )
             })}
           </div>
-          <div className="h-1 rounded-full bg-white/10 overflow-hidden">
-            <div className="h-full rounded-full bg-gradient-to-r from-emerald-400 to-blue-400" style={{ width: `${pct}%` }} />
+          <div style={{ height: 5, borderRadius: 99, background: 'rgba(255,255,255,0.12)', overflow: 'hidden', marginBottom: 8 }}>
+            <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: 'linear-gradient(90deg, #34d399, #38bdf8)' }} />
           </div>
-          <p className="text-[9px] text-white/30 mt-1.5 group-hover:text-white/50 flex items-center gap-0.5 transition-colors">Ver todas as ações <ChevronRight size={8} /></p>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 3 }}>Ver todas as ações <ChevronRight size={8} /></p>
+          {hoveredBar !== null && (
+            <div style={{ position: 'fixed', left: tooltipPos.x + 12, top: tooltipPos.y - 60, zIndex: 9999, pointerEvents: 'none', background: '#0f172a', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '8px 12px', fontSize: 11, color: '#fff', boxShadow: '0 8px 32px rgba(0,0,0,0.7)' }}>
+              <p style={{ fontWeight: 700, color: '#e2e8f0', marginBottom: 3 }}>{CUMULATIVO[hoveredBar].mes} 2026</p>
+              <p style={{ color: 'rgba(255,255,255,0.6)' }}>Ações no período: <span style={{ color: '#34d399', fontWeight: 700 }}>{CUMULATIVO[hoveredBar].novas}</span></p>
+              <p style={{ color: 'rgba(255,255,255,0.6)' }}>Total acumulado: <span style={{ color: '#38bdf8', fontWeight: 700 }}>{CUMULATIVO[hoveredBar].total}</span></p>
+            </div>
+          )}
         </div>
 
-        {/* CARD 2 — Calendário */}
-        <div className="bg-white/10 border border-white/15 rounded-xl p-3 cursor-pointer transition-all duration-200 hover:bg-white/[0.16] hover:scale-[1.02] hover:border-white/30 group" onClick={() => setModal('periodos')}>
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wider">Calendário de Ações</p>
-            <Calendar size={11} className="text-blue-300" />
+        {/* CARD 2 */}
+        <div className="rounded-2xl p-4 cursor-pointer group transition-all duration-200 hover:scale-[1.02]"
+          style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)' }}
+          onClick={() => setModal('periodos')}>
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Calendário de Ações</p>
+            <Calendar size={13} color="rgba(255,255,255,0.7)" />
           </div>
-          <div className="space-y-1.5">
+          <div className="space-y-2.5">
             {PERIODOS.map((p, i) => {
               const done = p.acoes.filter(a => a.status === 'done').length
               const inProg = p.acoes.filter(a => a.status === 'in_progress').length
+              const isHov = hoveredPeriodo === i
               return (
-                <div key={i} className="flex items-center gap-2">
-                  <span className="text-[9px] text-white/60 w-12 flex-shrink-0 font-semibold">{p.label}</span>
-                  <div className="flex-1 h-2.5 rounded-full bg-white/10 overflow-hidden flex">
-                    <div className="h-full bg-emerald-400/80" style={{ width: `${(done / p.acoes.length) * 100}%` }} />
-                    <div className="h-full bg-blue-400/70" style={{ width: `${(inProg / p.acoes.length) * 100}%` }} />
+                <div key={i} className="relative"
+                  onMouseEnter={e => { setHoveredPeriodo(i); setTooltipPos({ x: e.clientX, y: e.clientY }) }}
+                  onMouseMove={e => setTooltipPos({ x: e.clientX, y: e.clientY })}
+                  onMouseLeave={() => setHoveredPeriodo(null)}>
+                  <div className="flex items-center gap-2">
+                    <span style={{ fontSize: 10, color: isHov ? '#fff' : 'rgba(255,255,255,0.75)', width: 44, flexShrink: 0, fontWeight: 600, transition: 'color 0.15s' }}>{p.label}</span>
+                    <div style={{ flex: 1, height: 10, borderRadius: 99, background: 'rgba(255,255,255,0.12)', overflow: 'hidden', display: 'flex' }}>
+                      <div style={{ height: '100%', background: '#34d399', width: `${(done / p.acoes.length) * 100}%` }} />
+                      <div style={{ height: '100%', background: '#38bdf8', width: `${(inProg / p.acoes.length) * 100}%` }} />
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 700, color: '#fff', width: 28, textAlign: 'right', flexShrink: 0 }}>{done}/{p.acoes.length}</span>
+                    <StatusIcon status={done === p.acoes.length ? 'done' : inProg > 0 ? 'in_progress' : 'pending'} size={11} />
                   </div>
-                  <span className="text-[9px] font-bold text-white/70 w-7 text-right flex-shrink-0">{done}/{p.acoes.length}</span>
-                  <StatusIcon status={done === p.acoes.length ? 'done' : inProg > 0 ? 'in_progress' : 'pending'} />
+                  {isHov && (
+                    <div style={{ position: 'fixed', left: tooltipPos.x + 12, top: tooltipPos.y - 80, zIndex: 9999, pointerEvents: 'none' }}>
+                      <PeriodoTooltip label={p.label} done={done} total={p.acoes.length} acoes={p.acoes} />
+                    </div>
+                  )}
                 </div>
               )
             })}
           </div>
-          <p className="text-[9px] text-white/30 mt-2 group-hover:text-white/50 flex items-center gap-0.5 transition-colors">Ver cronograma completo <ChevronRight size={8} /></p>
+          <div className="flex gap-3 mt-3">
+            {[['#34d399','Concluída'],['#38bdf8','Em andamento'],['rgba(255,255,255,0.18)','Pendente']].map(([color, label]) => (
+              <div key={label} className="flex items-center gap-1">
+                <div style={{ width: 8, height: 8, borderRadius: 99, background: color }} />
+                <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.6)' }}>{label}</span>
+              </div>
+            ))}
+          </div>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 8 }}>Ver cronograma completo <ChevronRight size={8} /></p>
         </div>
 
-        {/* CARD 3 — Canais */}
-        <div className="bg-white/10 border border-white/15 rounded-xl p-3 cursor-pointer transition-all duration-200 hover:bg-white/[0.16] hover:scale-[1.02] hover:border-white/30 group" onClick={() => setModal('canais')}>
-          <div className="flex items-center justify-between mb-1">
-            <p className="text-[10px] font-semibold text-white/60 uppercase tracking-wider">Ações por Canal</p>
-            <BarChart2 size={11} className="text-violet-300" />
+        {/* CARD 3 */}
+        <div className="rounded-2xl p-4 cursor-pointer group transition-all duration-200 hover:scale-[1.02]"
+          style={{ background: 'rgba(0,0,0,0.35)', border: '1px solid rgba(255,255,255,0.18)', backdropFilter: 'blur(12px)' }}
+          onClick={() => setModal('canais')}>
+          <div className="flex items-center justify-between mb-3">
+            <p style={{ color: 'rgba(255,255,255,0.9)', fontSize: 11, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase' }}>Ações por Canal</p>
+            <BarChart2 size={13} color="rgba(255,255,255,0.7)" />
           </div>
-          <div className="h-[76px]">
+          <div style={{ height: 90 }}>
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={CANAIS} margin={{ top: 2, right: 0, bottom: 0, left: -25 }} barCategoryGap="25%">
-                <XAxis dataKey="canal" tick={{ fontSize: 7, fill: 'rgba(255,255,255,0.45)' }} axisLine={false} tickLine={false} />
-                <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
-                <Bar dataKey="planejado" name="Planejado" fill="rgba(255,255,255,0.12)" radius={[2, 2, 0, 0]} />
-                <Bar dataKey="executado" name="Executado" radius={[2, 2, 0, 0]}>
-                  {CANAIS.map((c, i) => <Cell key={i} fill={c.color} fillOpacity={0.85} />)}
+              <BarChart data={CANAIS} margin={{ top: 4, right: 2, bottom: 0, left: -22 }} barCategoryGap="28%">
+                <XAxis dataKey="canal" tick={{ fontSize: 8, fill: 'rgba(255,255,255,0.75)', fontWeight: 600 }} axisLine={false} tickLine={false} />
+                <Tooltip content={<BarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.06)' }} />
+                <Bar dataKey="planejado" name="Planejado" fill="rgba(255,255,255,0.15)" radius={[3, 3, 0, 0]} />
+                <Bar dataKey="executado" name="Executado" radius={[3, 3, 0, 0]}>
+                  {CANAIS.map((c, i) => <Cell key={i} fill={c.color} />)}
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
-          <div className="flex gap-2 flex-wrap mt-0.5">
+          <div className="flex gap-2 flex-wrap mt-1">
             {CANAIS.map((c, i) => (
               <div key={i} className="flex items-center gap-1">
-                <div className="w-1.5 h-1.5 rounded-full" style={{ background: c.color }} />
-                <span className="text-[8px] text-white/45">{c.canal} {c.executado}/{c.planejado}</span>
+                <div style={{ width: 6, height: 6, borderRadius: 99, background: c.color }} />
+                <span style={{ fontSize: 8, color: 'rgba(255,255,255,0.65)' }}>{c.canal} {c.executado}/{c.planejado}</span>
               </div>
             ))}
           </div>
-          <p className="text-[9px] text-white/30 mt-1 group-hover:text-white/50 flex items-center gap-0.5 transition-colors">Ver detalhes por canal <ChevronRight size={8} /></p>
+          <p style={{ fontSize: 9, color: 'rgba(255,255,255,0.45)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 6 }}>Ver detalhes por canal <ChevronRight size={8} /></p>
         </div>
       </div>
 
-      {/* MODAL 1 — Execução */}
       {modal === 'execucao' && (
         <DetailModal title="📋 Plano de Ação 2026 — 20 Ações" onClose={() => setModal(null)}>
           <div className="grid grid-cols-3 gap-3 mb-5">
             {[
-              { label: "Concluídas", val: concluidas, color: "text-emerald-400", bg: "bg-emerald-400/10 border-emerald-400/20" },
-              { label: "Em andamento", val: emAndamento, color: "text-blue-400", bg: "bg-blue-400/10 border-blue-400/20" },
-              { label: "Pendentes", val: ACOES.length - concluidas - emAndamento, color: "text-white/50", bg: "bg-white/5 border-white/10" },
+              { label: "Concluídas", val: concluidas, color: "#34d399", bg: "rgba(52,211,153,0.1)", border: "rgba(52,211,153,0.3)" },
+              { label: "Em andamento", val: emAndamento, color: "#38bdf8", bg: "rgba(56,189,248,0.1)", border: "rgba(56,189,248,0.3)" },
+              { label: "Pendentes", val: ACOES.length - concluidas - emAndamento, color: "rgba(255,255,255,0.5)", bg: "rgba(255,255,255,0.05)", border: "rgba(255,255,255,0.1)" },
             ].map((s, i) => (
-              <div key={i} className={`${s.bg} border rounded-xl p-3 text-center`}>
-                <p className={`text-3xl font-extrabold ${s.color}`}>{s.val}</p>
-                <p className="text-[10px] text-white/50 mt-0.5">{s.label}</p>
+              <div key={i} style={{ background: s.bg, border: `1px solid ${s.border}`, borderRadius: 14, padding: 12, textAlign: 'center' }}>
+                <p style={{ fontSize: 32, fontWeight: 900, color: s.color, lineHeight: 1 }}>{s.val}</p>
+                <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 4 }}>{s.label}</p>
               </div>
             ))}
           </div>
           <div className="space-y-2">
             {ACOES.map(a => (
-              <div key={a.id} className="flex items-start gap-3 p-3 rounded-xl bg-white/5 border border-white/8 hover:bg-white/10 transition-colors">
-                <div className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white/40 bg-white/10 flex-shrink-0 mt-0.5">{a.id}</div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                    <p className="text-xs font-semibold text-white">{a.titulo}</p>
-                    <span className="text-[9px] text-white/30">{a.periodo}</span>
+              <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }} className="hover:bg-white/10 transition-colors">
+                <div style={{ width: 24, height: 24, borderRadius: 99, background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.5)', flexShrink: 0, marginTop: 1 }}>{a.id}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2, flexWrap: 'wrap' }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>{a.titulo}</p>
+                    <span style={{ fontSize: 9, color: 'rgba(255,255,255,0.35)' }}>{a.periodo}</span>
                   </div>
-                  <p className="text-[10px] text-white/50 leading-relaxed">{a.objetivo}</p>
-                  <span className="inline-block text-[9px] bg-white/10 rounded px-1.5 py-0.5 text-white/40 mt-1">{a.canal}</span>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', lineHeight: 1.5 }}>{a.objetivo}</p>
+                  <span style={{ display: 'inline-block', fontSize: 9, background: 'rgba(255,255,255,0.1)', borderRadius: 6, padding: '2px 8px', color: 'rgba(255,255,255,0.45)', marginTop: 4 }}>{a.canal}</span>
                 </div>
                 <StatusIcon status={a.status} size={14} />
               </div>
@@ -211,28 +270,27 @@ export default function HeaderMiniCharts() {
         </DetailModal>
       )}
 
-      {/* MODAL 2 — Calendário */}
       {modal === 'periodos' && (
         <DetailModal title="📅 Cronograma de Execução 2026" onClose={() => setModal(null)}>
           <div className="space-y-4">
             {PERIODOS.map((p, i) => {
               const done = p.acoes.filter(a => a.status === 'done').length
-              const gradients = ['from-blue-600 to-blue-800', 'from-violet-600 to-violet-800', 'from-cyan-600 to-cyan-800', 'from-amber-600 to-orange-700', 'from-rose-600 to-rose-800']
+              const gradients = ['#1d4ed8,#2563eb', '#7c3aed,#8b5cf6', '#0e7490,#0891b2', '#b45309,#d97706', '#be123c,#e11d48']
               return (
-                <div key={i} className="rounded-xl border border-white/10 overflow-hidden">
-                  <div className={`bg-gradient-to-r ${gradients[i]} px-4 py-2.5 flex items-center justify-between`}>
-                    <span className="font-bold text-white text-sm">{p.label} de 2026</span>
-                    <span className="text-[10px] bg-white/20 rounded-full px-2 py-0.5 text-white font-semibold">{done}/{p.acoes.length} concluídas</span>
+                <div key={i} style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                  <div style={{ background: `linear-gradient(135deg, ${gradients[i]})`, padding: '10px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{p.label} de 2026</span>
+                    <span style={{ fontSize: 10, background: 'rgba(255,255,255,0.2)', borderRadius: 99, padding: '2px 10px', color: '#fff', fontWeight: 600 }}>{done}/{p.acoes.length} concluídas</span>
                   </div>
-                  <div className="divide-y divide-white/5">
+                  <div>
                     {p.acoes.map(a => (
-                      <div key={a.id} className="flex items-start gap-3 px-4 py-3 hover:bg-white/5 transition-colors">
+                      <div key={a.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }} className="hover:bg-white/5 transition-colors">
                         <StatusIcon status={a.status} size={13} />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs font-semibold text-white">#{a.id} {a.titulo}</p>
-                          <p className="text-[10px] text-white/50 mt-0.5 leading-relaxed">{a.objetivo}</p>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: 12, fontWeight: 600, color: '#fff' }}>#{a.id} {a.titulo}</p>
+                          <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.5)', marginTop: 2, lineHeight: 1.5 }}>{a.objetivo}</p>
                         </div>
-                        <span className="text-[9px] bg-white/10 rounded px-1.5 py-0.5 text-white/40 flex-shrink-0">{a.canal}</span>
+                        <span style={{ fontSize: 9, background: 'rgba(255,255,255,0.1)', borderRadius: 6, padding: '2px 8px', color: 'rgba(255,255,255,0.45)', flexShrink: 0 }}>{a.canal}</span>
                       </div>
                     ))}
                   </div>
@@ -243,35 +301,32 @@ export default function HeaderMiniCharts() {
         </DetailModal>
       )}
 
-      {/* MODAL 3 — Canais */}
       {modal === 'canais' && (
         <DetailModal title="📡 Ações por Canal de Comunicação" onClose={() => setModal(null)}>
           <div className="space-y-4">
             {CANAIS.map((c, i) => {
               const pct = Math.round((c.executado / c.planejado) * 100)
-              const acoesCanal = ACOES.filter(a =>
-                a.canal.toLowerCase().includes(c.canal.toLowerCase().split('/')[0].toLowerCase())
-              )
+              const acoesCanal = ACOES.filter(a => a.canal.toLowerCase().includes(c.canal.toLowerCase().split('/')[0].toLowerCase()))
               return (
-                <div key={i} className="rounded-xl border border-white/10 p-4 bg-white/5">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="flex items-center gap-2">
-                      <div className="w-3 h-3 rounded-full" style={{ background: c.color }} />
-                      <span className="font-bold text-white">{c.canal}</span>
+                <div key={i} style={{ borderRadius: 14, border: '1px solid rgba(255,255,255,0.1)', padding: 16, background: 'rgba(255,255,255,0.04)' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <div style={{ width: 12, height: 12, borderRadius: 99, background: c.color }} />
+                      <span style={{ fontWeight: 700, color: '#fff', fontSize: 14 }}>{c.canal}</span>
                     </div>
-                    <div className="flex gap-3 text-[11px]">
-                      <span className="text-white/40">Planejado: <span className="text-white font-bold">{c.planejado}</span></span>
-                      <span className="text-white/40">Executado: <span style={{ color: c.color }} className="font-bold">{c.executado}</span></span>
+                    <div style={{ display: 'flex', gap: 16, fontSize: 11 }}>
+                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>Planejado: <span style={{ color: '#fff', fontWeight: 700 }}>{c.planejado}</span></span>
+                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>Executado: <span style={{ color: c.color, fontWeight: 700 }}>{c.executado}</span></span>
                     </div>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/10 overflow-hidden mb-3">
-                    <div className="h-full rounded-full" style={{ width: `${pct}%`, background: c.color }} />
+                  <div style={{ height: 6, borderRadius: 99, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginBottom: 12 }}>
+                    <div style={{ height: '100%', borderRadius: 99, width: `${pct}%`, background: c.color }} />
                   </div>
                   {acoesCanal.slice(0, 5).map(a => (
-                    <div key={a.id} className="flex items-center gap-2 py-1 text-[10px]">
+                    <div key={a.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 0', fontSize: 10 }}>
                       <StatusIcon status={a.status} size={10} />
-                      <span className="text-white/60 flex-1">{a.titulo}</span>
-                      <span className="text-white/30">{a.periodo}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.65)', flex: 1 }}>{a.titulo}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.3)' }}>{a.periodo}</span>
                     </div>
                   ))}
                 </div>
