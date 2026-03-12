@@ -1,40 +1,96 @@
-import React, { createContext, useContext, useState, useCallback } from "react"
-import { type User, login as doLogin, logout as doLogout, register as doRegister, getSession } from "./auth"
+import React, { createContext, useContext, useState, useCallback, useEffect } from "react"
+import {
+  signInWithPopup, signOut, onAuthStateChanged,
+  signInWithEmailAndPassword, createUserWithEmailAndPassword,
+  updateProfile, type User as FirebaseUser
+} from "firebase/auth"
+import { auth, googleProvider } from "./firebase"
+
+export interface User {
+  id: string
+  name: string
+  email: string
+  avatar?: string
+}
 
 interface AuthContextValue {
   user: User | null
-  login: (email: string, password: string) => boolean
-  register: (name: string, email: string, password: string) => { success: boolean; error?: string }
-  logout: () => void
+  loading: boolean
+  loginWithGoogle: () => Promise<boolean>
+  loginWithEmail: (email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  registerWithEmail: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
 
+function toUser(u: FirebaseUser): User {
+  return {
+    id: u.uid,
+    name: u.displayName || u.email?.split("@")[0] || "Usuário",
+    email: u.email || "",
+    avatar: u.photoURL || undefined,
+  }
+}
+
+function parseFirebaseError(code: string): string {
+  switch (code) {
+    case "auth/user-not-found": return "E-mail não cadastrado."
+    case "auth/wrong-password": return "Senha incorreta."
+    case "auth/email-already-in-use": return "Este e-mail já está cadastrado."
+    case "auth/weak-password": return "A senha deve ter pelo menos 6 caracteres."
+    case "auth/invalid-email": return "E-mail inválido."
+    case "auth/popup-closed-by-user": return "Login cancelado."
+    case "auth/invalid-credential": return "E-mail ou senha incorretos."
+    default: return "Erro ao autenticar. Tente novamente."
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(() => getSession())
+  const [user, setUser] = useState<User | null>(null)
+  const [loading, setLoading] = useState(true)
 
-  const login = useCallback((email: string, password: string): boolean => {
-    const u = doLogin(email, password)
-    if (u) { setUser(u); return true }
-    return false
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (u) => {
+      setUser(u ? toUser(u) : null)
+      setLoading(false)
+    })
+    return unsub
   }, [])
 
-  const register = useCallback((name: string, email: string, password: string) => {
-    const result = doRegister(name, email, password)
-    if (result.success) {
-      const u = getSession()
-      if (u) setUser(u)
+  const loginWithGoogle = useCallback(async (): Promise<boolean> => {
+    try {
+      await signInWithPopup(auth, googleProvider)
+      return true
+    } catch { return false }
+  }, [])
+
+  const loginWithEmail = useCallback(async (email: string, password: string) => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password)
+      return { success: true }
+    } catch (e: any) {
+      return { success: false, error: parseFirebaseError(e.code) }
     }
-    return result
   }, [])
 
-  const logout = useCallback(() => {
-    doLogout()
-    setUser(null)
+  const registerWithEmail = useCallback(async (name: string, email: string, password: string) => {
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password)
+      await updateProfile(cred.user, { displayName: name })
+      setUser(toUser({ ...cred.user, displayName: name }))
+      return { success: true }
+    } catch (e: any) {
+      return { success: false, error: parseFirebaseError(e.code) }
+    }
+  }, [])
+
+  const logout = useCallback(async () => {
+    await signOut(auth)
   }, [])
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout }}>
+    <AuthContext.Provider value={{ user, loading, loginWithGoogle, loginWithEmail, registerWithEmail, logout }}>
       {children}
     </AuthContext.Provider>
   )
