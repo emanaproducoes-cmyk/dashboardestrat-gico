@@ -392,8 +392,6 @@ export default function HeaderMiniCharts() {
 }
 ```
 
----
 
-**ARQUIVO 2: `src/components/dashboard/EditableHeroHeader.tsx`** — só mudou o padding, então só precisa alterar **uma linha**. Abra o arquivo, procure `p-8` na primeira div do return e troque por `p-10`:
-```
-className="relative overflow-hidden rounded-2xl p-10 text-white"
+
+
