@@ -64,13 +64,13 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const [tagline, setTagline] = useState("Inteligência Estratégica de Marketing")
   const [subtitle, setSubtitle] = useState("Centro de Inteligência de Marketing Estratégico 2026")
   const [description, setDescription] = useState(
-    "Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados."
+    "Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados. Monitore KPIs, acompanhe performance e otimize sua estratégia multicanal."
   )
   const [stats, setStats] = useState<StatItem[]>([
-    { value: "200", label: "Meta Anual LinkedIn" },
-    { value: "500", label: "Meta Anual YouTube" },
+    { value: "200",    label: "Meta Anual LinkedIn" },
+    { value: "500",    label: "Meta Anual YouTube" },
     { value: "70-105", label: "Conversão Instagram" },
-    { value: "3-4", label: "Cases de Sucesso" },
+    { value: "3-4",    label: "Cases de Sucesso" },
   ])
   const [now, setNow] = useState(new Date())
   const fileRef = useRef<HTMLInputElement>(null)
@@ -101,14 +101,20 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-8 text-white" style={{ background: gradientCss }}>
+
+      {/* Blobs de fundo */}
       <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="absolute -top-24 -right-24 w-96 h-96 rounded-full bg-white/20 blur-3xl" />
         <div className="absolute -bottom-24 -left-24 w-72 h-72 rounded-full bg-violet-400/30 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 rounded-full bg-blue-300/20 blur-3xl" />
       </div>
 
+      {/* Linha principal — items-start para relógio ficar no topo direito */}
       <div className="relative flex items-start justify-between gap-4">
+
+        {/* Esquerda: avatar + textos */}
         <div className="flex items-center gap-4 min-w-0">
+
+          {/* Avatar — w-16 h-16 com câmera editável */}
           <div
             className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 cursor-pointer relative group overflow-hidden flex-shrink-0"
             onClick={() => fileRef.current?.click()}
@@ -124,22 +130,34 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
 
           <div className="min-w-0">
+            {/* Tagline */}
             <div className="flex items-center gap-1.5 mb-0.5">
               <Sparkles size={11} className="text-blue-200 flex-shrink-0" />
-              <EditableField value={tagline} onChange={setTagline} className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest" />
+              <EditableField
+                value={tagline}
+                onChange={setTagline}
+                className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest"
+              />
             </div>
+
+            {/* Título */}
             <h1 className="leading-tight">
               <EditableField value={companyName} onChange={setCompanyName} className="text-xl font-extrabold text-white" />
             </h1>
+
+            {/* Subtítulo */}
             <p className="mt-0.5">
               <EditableField value={subtitle} onChange={setSubtitle} className="text-xs text-blue-100/80" />
             </p>
+
+            {/* Descrição */}
             <p className="mt-0.5 hidden md:block">
               <EditableField value={description} onChange={setDescription} className="text-[11px] text-blue-200/60 leading-relaxed" multiline />
             </p>
           </div>
         </div>
 
+        {/* Relógio — canto superior direito */}
         <div className="flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-xl px-3 py-2.5 border border-white/20 flex-shrink-0">
           <Clock size={12} className="text-blue-200" />
           <div className="text-right">
@@ -150,10 +168,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
         </div>
       </div>
 
-      <div className="relative">
-        <HeaderMiniCharts />
-      </div>
-
+      {/* Stats */}
       <div className="relative mt-4 pt-4 border-t border-white/15 flex flex-wrap gap-3 md:gap-0 md:divide-x divide-white/20">
         {stats.map((s, i) => (
           <div key={i} className="md:flex-1 md:text-center px-4 first:pl-0">
@@ -166,6 +181,9 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           </div>
         ))}
       </div>
+
+      {/* Mini charts */}
+      <HeaderMiniCharts />
     </div>
   )
 }
