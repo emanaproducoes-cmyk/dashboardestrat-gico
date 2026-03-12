@@ -156,7 +156,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
 
       <div className="relative mt-4 pt-4 border-t border-white/15 flex flex-wrap gap-3 md:gap-0 md:divide-x divide-white/20">
         {stats.map((s, i) => (
-          <div key={i} className="md:flex-1 md:text-center px-4 first:pl-0">
+          <div key={i} className="md:flex-1 md:text-center px-4 first:pl-0 group/stat transition-all duration-200 hover:scale-110 cursor-default rounded-lg py-1">
             <div className="text-2xl md:text-3xl font-extrabold tracking-tight leading-none">
               <EditableField value={s.value} onChange={v => updateStat(i, 'value', v)} className="text-2xl md:text-3xl font-extrabold text-white" />
             </div>
