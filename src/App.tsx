@@ -32,7 +32,14 @@ function PageNotFound() {
 }
 
 function AppRoutes() {
-  const { user } = useAuth()
+  const { user, loading } = useAuth()
+
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center"
+      style={{ background: "linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #070f1f 100%)" }}>
+      <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+    </div>
+  )
 
   if (!user) return <LoginPage />
 
