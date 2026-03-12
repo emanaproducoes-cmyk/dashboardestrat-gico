@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { Sparkles, Clock } from "lucide-react"
+import HeaderMiniCharts from "./HeaderMiniCharts"
 
 const stats = [
   { value: "200", label: "Meta Anual LinkedIn" },
@@ -29,8 +30,14 @@ export default function HeroHeader() {
       <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div className="flex items-center gap-5">
           <div className="w-20 h-20 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30">
-            <span className="text-2xl font-black">AF</span>
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles size={14} className="text-blue-200" />
+              <span className="text-xs font-medium text-blue-200 tracking-wider uppercase">
+                Inteligência Estratégica de Marketing
+              </span>
+            </div>
           </div>
+
           <div>
             <div className="flex items-center gap-2 mb-1">
               <Sparkles size={14} className="text-blue-200" />
@@ -43,7 +50,7 @@ export default function HeroHeader() {
               Centro de Inteligência de Marketing Estratégico 2026
             </p>
             <p className="text-xs text-blue-200/70 mt-1 max-w-lg hidden md:block">
-              Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados.
+              Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados. Monitore KPIs, acompanhe performance e otimize sua estratégia multicanal.
             </p>
           </div>
         </div>
@@ -66,6 +73,8 @@ export default function HeroHeader() {
           </div>
         ))}
       </div>
+
+      <HeaderMiniCharts />
     </div>
   )
 }
