@@ -9,4 +9,5 @@ export interface GradientOption {
 export interface PageProps {
   darkMode?: boolean
   accentGradient?: GradientOption
+  isAdmin?: boolean
 }
