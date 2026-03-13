@@ -59,8 +59,17 @@ const cardBase: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   borderRadius: 16,
   padding: 16,
-  transition: 'all 0.3s ease',
+  transition: 'all 0.25s ease',
   cursor: 'pointer',
+}
+
+function cardHoverStyle(hovered: boolean, expandColor: string, isExpanded: boolean): React.CSSProperties {
+  if (!hovered || isExpanded) return {}
+  return {
+    transform: 'scale(1.03)',
+    boxShadow: `0 8px 32px ${expandColor}33`,
+    background: 'rgba(0,0,0,0.52)',
+  }
 }
 
 function EditableField({ value, onChange, style, multiline = false, pencilSize = 9, isAdmin = false }: {
@@ -165,16 +174,10 @@ function SavedBadge({ visible }: { visible: boolean }) {
       position: 'absolute', top: -10, right: 0,
       background: 'rgba(52,211,153,0.12)',
       border: '1px solid rgba(52,211,153,0.35)',
-      borderRadius: 99,
-      padding: '2px 10px',
-      fontSize: 9,
-      color: '#34d399',
-      fontWeight: 700,
-      letterSpacing: '0.07em',
-      opacity: visible ? 1 : 0,
-      transition: 'opacity 0.6s ease',
-      pointerEvents: 'none',
-      zIndex: 10,
+      borderRadius: 99, padding: '2px 10px', fontSize: 9,
+      color: '#34d399', fontWeight: 700, letterSpacing: '0.07em',
+      opacity: visible ? 1 : 0, transition: 'opacity 0.6s ease',
+      pointerEvents: 'none', zIndex: 10,
     }}>
       ✓ salvo
     </span>
@@ -185,6 +188,8 @@ export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
   const uid = user?.id as string | undefined
+
+  const [hoveredCard, setHoveredCard] = useState<'execucao' | 'periodos' | 'canais' | null>(null)
 
   const [acoes, setAcoes] = useState<Acao[]>(() =>
     loadFromStorage(storageKey(uid, 'acoes'), ACOES_INICIAL)
@@ -307,8 +312,16 @@ export default function HeaderMiniCharts() {
         <SavedBadge visible={savedFlag} />
 
         {/* CARD 1 — Progresso */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}` }}
-          onClick={() => handleCard('execucao')}>
+        <div
+          style={{
+            ...cardBase,
+            border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : hoveredCard === 'execucao' ? 'rgba(52,211,153,0.4)' : 'rgba(255,255,255,0.2)'}`,
+            ...cardHoverStyle(hoveredCard === 'execucao', '#34d399', exp('execucao')),
+          }}
+          onClick={() => handleCard('execucao')}
+          onMouseEnter={() => setHoveredCard('execucao')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <EditableLabel value={labelProgresso} onChange={handleLabelProgresso} isAdmin={isAdmin} />
             <span style={{ background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '2px 10px', border: '1px solid rgba(52,211,153,0.35)', flexShrink: 0 }}>{pct}%</span>
@@ -355,8 +368,16 @@ export default function HeaderMiniCharts() {
         </div>
 
         {/* CARD 2 — Calendário */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}` }}
-          onClick={() => handleCard('periodos')}>
+        <div
+          style={{
+            ...cardBase,
+            border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : hoveredCard === 'periodos' ? 'rgba(56,189,248,0.4)' : 'rgba(255,255,255,0.2)'}`,
+            ...cardHoverStyle(hoveredCard === 'periodos', '#38bdf8', exp('periodos')),
+          }}
+          onClick={() => handleCard('periodos')}
+          onMouseEnter={() => setHoveredCard('periodos')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <EditableLabel value={labelCalendario} onChange={handleLabelCalendario} isAdmin={isAdmin} />
             <Calendar size={13} color="rgba(255,255,255,0.65)" />
@@ -407,8 +428,16 @@ export default function HeaderMiniCharts() {
         </div>
 
         {/* CARD 3 — Canais */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}` }}
-          onClick={() => handleCard('canais')}>
+        <div
+          style={{
+            ...cardBase,
+            border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : hoveredCard === 'canais' ? 'rgba(250,204,21,0.4)' : 'rgba(255,255,255,0.2)'}`,
+            ...cardHoverStyle(hoveredCard === 'canais', '#facc15', exp('canais')),
+          }}
+          onClick={() => handleCard('canais')}
+          onMouseEnter={() => setHoveredCard('canais')}
+          onMouseLeave={() => setHoveredCard(null)}
+        >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <EditableLabel value={labelCanais} onChange={handleLabelCanais} isAdmin={isAdmin} />
             <BarChart2 size={13} color="rgba(255,255,255,0.65)" />
