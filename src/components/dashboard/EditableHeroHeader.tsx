@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from "react"
 import { Sparkles, Clock, Pencil, Check, Camera, Shield } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
 import { useAuth } from "../../lib/AuthContext"
-import { getUserItem, setUserItem } from "../../lib/auth"
+import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import HeaderMiniCharts from "./HeaderMiniCharts"
 
 interface EditableFieldProps {
@@ -16,9 +16,7 @@ interface EditableFieldProps {
 function EditableField({ value, onChange, className = "", multiline, isAdmin }: EditableFieldProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
-
   useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
-
   const save = () => { onChange(draft); setEditing(false) }
 
   if (!isAdmin) return <span className={className}>{value}</span>
@@ -81,25 +79,35 @@ function StatCard({ s, i, onUpdateValue, onUpdateLabel, isAdmin }: {
   )
 }
 
-export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
-  const gradientCss = accentGradient?.css || "linear-gradient(135deg, #3B6AF5, #7B35EF)"
-  const { user } = useAuth()
-  const uid = user?.id ?? 'guest'
-  const isAdmin = user?.isAdmin ?? false
-
-  const [photo, setPhoto] = useState<string | null>(() => {
-    try { return getUserItem(uid, 'hero_photo') } catch { return null }
-  })
-  const [companyName, setCompanyName] = useState("AF Consultoria & Projetos")
-  const [tagline, setTagline] = useState("Inteligência Estratégica de Marketing")
-  const [subtitle, setSubtitle] = useState("Centro de Inteligência de Marketing Estratégico 2026")
-  const [description, setDescription] = useState("Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados. Monitore KPIs, acompanhe performance e otimize sua estratégia multicanal.")
-  const [stats, setStats] = useState<StatItem[]>([
+const DEFAULTS = {
+  companyName: "AF Consultoria & Projetos",
+  tagline: "Inteligência Estratégica de Marketing",
+  subtitle: "Centro de Inteligência de Marketing Estratégico 2026",
+  description: "Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados. Monitore KPIs, acompanhe performance e otimize sua estratégia multicanal.",
+  stats: [
     { value: "200", label: "Meta Anual LinkedIn" },
     { value: "500", label: "Meta Anual YouTube" },
     { value: "70-105", label: "Conversão Instagram" },
     { value: "3-4", label: "Cases de Sucesso" },
-  ])
+  ]
+}
+
+export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
+  const gradientCss = accentGradient?.css || "linear-gradient(135deg, #3B6AF5, #7B35EF)"
+  const { user } = useAuth()
+  const isAdmin = user?.isAdmin ?? false
+
+  const load = (key: string, def: string) => getGlobalItem(key) || def
+
+  const [photo, setPhoto] = useState<string | null>(() => getGlobalItem('hero_photo'))
+  const [companyName, setCompanyName] = useState(() => load('hero_companyName', DEFAULTS.companyName))
+  const [tagline, setTagline] = useState(() => load('hero_tagline', DEFAULTS.tagline))
+  const [subtitle, setSubtitle] = useState(() => load('hero_subtitle', DEFAULTS.subtitle))
+  const [description, setDescription] = useState(() => load('hero_description', DEFAULTS.description))
+  const [stats, setStats] = useState<StatItem[]>(() => {
+    const saved = getGlobalItem('hero_stats')
+    return saved ? JSON.parse(saved) : DEFAULTS.stats
+  })
   const [now, setNow] = useState(new Date())
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -108,6 +116,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
     return () => clearInterval(interval)
   }, [])
 
+  const save = (key: string, value: string) => { if (isAdmin) setGlobalItem(key, value) }
   const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
   const date = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
 
@@ -119,19 +128,20 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
     reader.onload = (ev) => {
       if (ev.target?.result && typeof ev.target.result === "string") {
         setPhoto(ev.target.result)
-        try { setUserItem(uid, 'hero_photo', ev.target.result) } catch {}
+        setGlobalItem('hero_photo', ev.target.result)
       }
     }
     reader.readAsDataURL(file)
   }
 
   const updateStat = (i: number, field: keyof StatItem, val: string) => {
-    setStats(prev => prev.map((s, idx) => idx === i ? { ...s, [field]: val } : s))
+    const next = stats.map((s, idx) => idx === i ? { ...s, [field]: val } : s)
+    setStats(next)
+    setGlobalItem('hero_stats', JSON.stringify(next))
   }
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-8 text-white" style={{ background: gradientCss }}>
-
       {isAdmin && (
         <div className="absolute top-3 left-1/2 -translate-x-1/2 z-10 flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-400/20 border border-yellow-300/40">
           <Shield size={11} className="text-yellow-300" />
@@ -166,16 +176,16 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Sparkles size={11} className="text-blue-200 flex-shrink-0" />
-              <EditableField value={tagline} onChange={setTagline} className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest" isAdmin={isAdmin} />
+              <EditableField value={tagline} onChange={v => { setTagline(v); save('hero_tagline', v) }} className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest" isAdmin={isAdmin} />
             </div>
             <h1 className="leading-tight">
-              <EditableField value={companyName} onChange={setCompanyName} className="text-2xl font-extrabold text-white" isAdmin={isAdmin} />
+              <EditableField value={companyName} onChange={v => { setCompanyName(v); save('hero_companyName', v) }} className="text-2xl font-extrabold text-white" isAdmin={isAdmin} />
             </h1>
             <p className="mt-1">
-              <EditableField value={subtitle} onChange={setSubtitle} className="text-sm text-blue-100/80" isAdmin={isAdmin} />
+              <EditableField value={subtitle} onChange={v => { setSubtitle(v); save('hero_subtitle', v) }} className="text-sm text-blue-100/80" isAdmin={isAdmin} />
             </p>
             <p className="mt-1 hidden md:block">
-              <EditableField value={description} onChange={setDescription} className="text-xs text-blue-200/60 leading-relaxed" multiline isAdmin={isAdmin} />
+              <EditableField value={description} onChange={v => { setDescription(v); save('hero_description', v) }} className="text-xs text-blue-200/60 leading-relaxed" multiline isAdmin={isAdmin} />
             </p>
           </div>
         </div>
@@ -192,8 +202,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
 
       <div className="relative mt-8 pt-6 border-t border-white/15 flex flex-wrap gap-3 md:gap-0 md:divide-x divide-white/20">
         {stats.map((s, i) => (
-          <StatCard
-            key={i} s={s} i={i}
+          <StatCard key={i} s={s} i={i}
             onUpdateValue={v => updateStat(i, 'value', v)}
             onUpdateLabel={v => updateStat(i, 'label', v)}
             isAdmin={isAdmin}
