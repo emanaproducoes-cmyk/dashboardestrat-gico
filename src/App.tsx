@@ -12,7 +12,6 @@ import Insights from './pages/Insights'
 import KPIs from './pages/KPIs'
 import ProvaSocial from './pages/ProvaSocial'
 import Roadmap from './pages/Roadmap'
-import Campanhas from './pages/Campanhas'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -34,13 +33,16 @@ function PageNotFound() {
 
 function AppRoutes() {
   const { user, loading } = useAuth()
+
   if (loading) return (
     <div className="min-h-screen flex items-center justify-center"
       style={{ background: "linear-gradient(135deg, #050d1a 0%, #0a1628 50%, #070f1f 100%)" }}>
       <div className="w-10 h-10 border-2 border-white/20 border-t-white rounded-full animate-spin" />
     </div>
   )
+
   if (!user) return <LoginPage />
+
   return (
     <Routes>
       <Route path="/" element={<Layout currentPageName="Home"><Home /></Layout>} />
@@ -51,7 +53,6 @@ function AppRoutes() {
       <Route path="/KPIs" element={<Layout currentPageName="KPIs"><KPIs /></Layout>} />
       <Route path="/ProvaSocial" element={<Layout currentPageName="ProvaSocial"><ProvaSocial /></Layout>} />
       <Route path="/Roadmap" element={<Layout currentPageName="Roadmap"><Roadmap /></Layout>} />
-      <Route path="/Campanhas" element={<Layout currentPageName="Campanhas"><Campanhas /></Layout>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   )
