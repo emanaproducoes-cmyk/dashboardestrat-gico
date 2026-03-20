@@ -1,8 +1,10 @@
 import type { PageProps } from "../lib/types"
 import React from "react"
-import HeroHeader from "../components/dashboard/HeroHeader"
 import RoadmapTimeline from "../components/dashboard/RoadmapTimeline"
+import { useAuth } from "../lib/AuthContext"
 import { Calendar, Target } from "lucide-react"
+
+const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 
 const milestones = [
   { date: "Mar/26", label: "Lançamento LinkedIn + YouTube", status: "done" },
@@ -22,6 +24,9 @@ const deliverables = [
 ]
 
 export default function Roadmap({ darkMode = false }: PageProps) {
+  const { user } = useAuth()
+  const isAdmin = user?.email === ADMIN_EMAIL || user?.isAdmin === true
+
   const bg = "min-h-screen p-6 md:p-8 space-y-8" + (darkMode ? "" : " bg-gray-50")
   const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
   const subClass = darkMode ? "text-white/50 text-sm" : "text-gray-500 text-sm"
@@ -31,16 +36,12 @@ export default function Roadmap({ darkMode = false }: PageProps) {
 
   return (
     <div className={bg}>
-      <HeroHeader />
-
-      {/* Roadmap timeline */}
       <section className={cardBg}>
         <h2 className={`${titleClass} mb-1`}>Roadmap Estratégico 2026</h2>
         <p className={`${subClass} mb-6`}>Linha do tempo de execução em 4 fases</p>
         <RoadmapTimeline dark={darkMode} />
       </section>
 
-      {/* Milestones */}
       <section>
         <h2 className={`${titleClass} mb-1`}>Marcos do Projeto</h2>
         <p className={`${subClass} mb-5`}>Datas e entregas chave do ciclo 2026</p>
@@ -62,7 +63,6 @@ export default function Roadmap({ darkMode = false }: PageProps) {
         </div>
       </section>
 
-      {/* Deliverables by quarter */}
       <section>
         <h2 className={`${titleClass} mb-1`}>Entregáveis por Trimestre</h2>
         <p className={`${subClass} mb-5`}>O que esperamos produzir em cada fase</p>
