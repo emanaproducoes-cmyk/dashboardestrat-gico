@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts"
-import { useAuth } from "../lib/AuthContext"
+import { useAuth } from "../../lib/AuthContext"
 
 const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 const STORAGE_KEY = "af_roadmap_phases"
@@ -127,13 +127,18 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
   const [selected, setSelected] = useState<PhaseItem | null>(null)
 
   useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(phases)) } catch {}
-  }, [phases])
+    if (isAdmin) {
+      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(phases)) } catch {}
+    }
+  }, [phases, isAdmin])
 
   const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
+    if (!isAdmin) return
     setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
   }
+
   const updateItem = (phaseIdx: number, itemIdx: number, value: string) => {
+    if (!isAdmin) return
     setPhases(prev => prev.map((p, i) => {
       if (i !== phaseIdx) return p
       const newItems = [...p.items]; newItems[itemIdx] = value
