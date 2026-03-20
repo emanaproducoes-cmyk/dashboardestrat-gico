@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from "react"
 import { CheckCircle2, Clock, Circle, X, ChevronRight, Calendar, BarChart2, Pencil, Check } from "lucide-react"
 import { useAuth } from "../../lib/AuthContext"
@@ -145,7 +146,7 @@ export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
 
-  const [acoes, saveAcoes, loadingAcoes] = useSharedData<Acao[]>('acoes', ACOES_INICIAL)
+  const [acoes, saveAcoes] = useSharedData<Acao[]>('acoes', ACOES_INICIAL)
   const [periodoLabels, savePeriodoLabels] = useSharedData<string[]>('periodoLabels', [...PERIODOS_LABELS])
   const [canaisLabels, saveCanaisLabels] = useSharedData<string[]>('canaisLabels', CANAIS_DEF.map(c => c.canal))
   const [labelProgresso, saveLabelProgresso] = useSharedData<string>('labelProgresso', 'Progresso das Ações')
@@ -211,12 +212,6 @@ export default function HeaderMiniCharts() {
   }
 
   const exp = (k: string) => expanded === k
-
-  if (loadingAcoes) return (
-    <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
-      <div style={{ width: 24, height: 24, border: '2px solid rgba(255,255,255,0.2)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
-    </div>
-  )
 
   return (
     <>
