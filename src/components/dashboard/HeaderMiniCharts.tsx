@@ -2,12 +2,11 @@ import React, { useState, useRef, useEffect, useCallback } from "react"
 import { CheckCircle2, Clock, Circle, X, ChevronRight, Calendar, BarChart2, Pencil, Check, Plus, Trash2, Save } from "lucide-react"
 import { useAuth } from "../../lib/AuthContext"
 import { db } from "../../lib/firebase"
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
+import { doc, setDoc, onSnapshot } from "firebase/firestore"
 
 type Status = 'done' | 'in_progress' | 'pending'
 interface Acao { id: number; periodo: string; titulo: string; objetivo: string; canal: string; status: Status }
 
-// ─── Documento único no Firestore ────────────────────────────────────────────
 const FIRESTORE_DOC = doc(db, 'dashboard', 'acoes')
 
 const ACOES_INICIAL: Acao[] = [
@@ -50,7 +49,6 @@ const cardBase: React.CSSProperties = {
   cursor: 'pointer',
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 async function saveToFirestore(data: {
   acoes: Acao[]
   labelProgresso: string
@@ -66,7 +64,6 @@ async function saveToFirestore(data: {
   }
 }
 
-// ─── Sub-componentes ──────────────────────────────────────────────────────────
 function EditableField({ value, onChange, style, multiline = false, pencilSize = 9, isAdmin = false }: {
   value: string; onChange: (v: string) => void; style?: React.CSSProperties
   multiline?: boolean; pencilSize?: number; isAdmin?: boolean
@@ -235,30 +232,27 @@ function SavedBadge({ visible }: { visible: boolean }) {
   )
 }
 
-// ─── Componente principal ─────────────────────────────────────────────────────
 export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
 
-  // ── Estado carregado do Firestore ──
   const [acoes,           setAcoes]           = useState<Acao[]>(ACOES_INICIAL)
   const [labelProgresso,  setLabelProgresso]  = useState('Progresso das Ações')
   const [labelCalendario, setLabelCalendario] = useState('Calendário de Ações')
   const [labelCanais,     setLabelCanais]     = useState('Canais de Atuação')
   const [periodoLabels,   setPeriodoLabels]   = useState<string[]>([...PERIODOS_LABELS_DEFAULT])
   const [canaisLabels,    setCanaisLabels]    = useState<string[]>(CANAIS_DEF.map(c => c.canal))
-  const [loading,         setLoading]         = useState(true)
 
-  const [modal,        setModal]        = useState<'execucao' | 'periodos' | 'canais' | null>(null)
-  const [expanded,     setExpanded]     = useState<'execucao' | 'periodos' | 'canais' | null>(null)
+  const [modal,          setModal]          = useState<'execucao' | 'periodos' | 'canais' | null>(null)
+  const [expanded,       setExpanded]       = useState<'execucao' | 'periodos' | 'canais' | null>(null)
   const [hoveredBar,     setHoveredBar]     = useState<number | null>(null)
   const [hoveredPeriodo, setHoveredPeriodo] = useState<number | null>(null)
-  const [savedFlag,    setSavedFlag]    = useState(false)
-  const [showNovaAcao, setShowNovaAcao] = useState(false)
+  const [savedFlag,      setSavedFlag]      = useState(false)
+  const [showNovaAcao,   setShowNovaAcao]   = useState(false)
 
   const flashSaved = useCallback(() => { setSavedFlag(true); setTimeout(() => setSavedFlag(false), 1800) }, [])
 
-  // ── Carrega e escuta mudanças em tempo real do Firestore ──
+  // ── Escuta Firestore em tempo real, sem bloquear a renderização ──
   useEffect(() => {
     const unsub = onSnapshot(FIRESTORE_DOC, (snap) => {
       if (snap.exists()) {
@@ -270,88 +264,38 @@ export default function HeaderMiniCharts() {
         if (data.periodoLabels)   setPeriodoLabels(data.periodoLabels)
         if (data.canaisLabels)    setCanaisLabels(data.canaisLabels)
       } else {
-        // Primeira vez — inicializa o documento no Firestore
         saveToFirestore({ acoes: ACOES_INICIAL, labelProgresso: 'Progresso das Ações', labelCalendario: 'Calendário de Ações', labelCanais: 'Canais de Atuação', periodoLabels: [...PERIODOS_LABELS_DEFAULT], canaisLabels: CANAIS_DEF.map(c => c.canal) })
       }
-      setLoading(false)
     })
     return () => unsub()
   }, [])
 
-  // ── Estado local enquanto admin edita (salva só ao clicar "Salvar Tudo") ──
-  const stateRef = useCallback(() => ({
-    acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels
-  }), [acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels])
-
   const handleSave = async () => {
-    await saveToFirestore(stateRef())
+    await saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels })
     flashSaved()
   }
 
-  // ── Mutações (atualizam estado local imediatamente + Firestore) ──
   const toggleAcao = (id: number) => {
-    setAcoes(prev => {
-      const next = prev.map(a => a.id !== id ? a : { ...a, status: (a.status === 'done' ? 'pending' : 'done') as Status })
-      saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels })
-      flashSaved(); return next
-    })
+    setAcoes(prev => { const next = prev.map(a => a.id !== id ? a : { ...a, status: (a.status === 'done' ? 'pending' : 'done') as Status }); saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels }); flashSaved(); return next })
   }
-
   const editAcao = (id: number, field: 'titulo' | 'objetivo' | 'canal' | 'periodo', val: string) => {
-    setAcoes(prev => {
-      const next = prev.map(a => a.id !== id ? a : { ...a, [field]: val })
-      saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels })
-      flashSaved(); return next
-    })
+    setAcoes(prev => { const next = prev.map(a => a.id !== id ? a : { ...a, [field]: val }); saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels }); flashSaved(); return next })
   }
-
   const addAcao = (nova: Omit<Acao, 'id'>) => {
-    setAcoes(prev => {
-      const next = [...prev, { ...nova, id: Date.now() }]
-      saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels })
-      flashSaved(); return next
-    })
+    setAcoes(prev => { const next = [...prev, { ...nova, id: Date.now() }]; saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels }); flashSaved(); return next })
   }
-
   const deleteAcao = (id: number) => {
-    setAcoes(prev => {
-      const next = prev.filter(a => a.id !== id)
-      saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels })
-      flashSaved(); return next
-    })
+    setAcoes(prev => { const next = prev.filter(a => a.id !== id); saveToFirestore({ acoes: next, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels }); flashSaved(); return next })
   }
-
   const editPeriodo = (i: number, v: string) => {
-    setPeriodoLabels(prev => {
-      const next = prev.map((l, idx) => idx === i ? v : l)
-      saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels: next, canaisLabels })
-      flashSaved(); return next
-    })
+    setPeriodoLabels(prev => { const next = prev.map((l, idx) => idx === i ? v : l); saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels: next, canaisLabels }); flashSaved(); return next })
   }
-
   const editCanalLabel = (i: number, v: string) => {
-    setCanaisLabels(prev => {
-      const next = prev.map((l, idx) => idx === i ? v : l)
-      saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels: next })
-      flashSaved(); return next
-    })
+    setCanaisLabels(prev => { const next = prev.map((l, idx) => idx === i ? v : l); saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais, periodoLabels, canaisLabels: next }); flashSaved(); return next })
   }
-
-  const handleLabelProgresso = (v: string) => {
-    setLabelProgresso(v)
-    saveToFirestore({ acoes, labelProgresso: v, labelCalendario, labelCanais, periodoLabels, canaisLabels })
-    flashSaved()
-  }
-  const handleLabelCalendario = (v: string) => {
-    setLabelCalendario(v)
-    saveToFirestore({ acoes, labelProgresso, labelCalendario: v, labelCanais, periodoLabels, canaisLabels })
-    flashSaved()
-  }
-  const handleLabelCanais = (v: string) => {
-    setLabelCanais(v)
-    saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais: v, periodoLabels, canaisLabels })
-    flashSaved()
-  }
+  const handleLabelProgresso  = (v: string) => { setLabelProgresso(v);  saveToFirestore({ acoes, labelProgresso: v,  labelCalendario, labelCanais, periodoLabels, canaisLabels }); flashSaved() }
+  const handleLabelCalendario = (v: string) => { setLabelCalendario(v); saveToFirestore({ acoes, labelProgresso, labelCalendario: v, labelCanais, periodoLabels, canaisLabels }); flashSaved() }
+  const handleLabelCanais     = (v: string) => { setLabelCanais(v);     saveToFirestore({ acoes, labelProgresso, labelCalendario, labelCanais: v, periodoLabels, canaisLabels }); flashSaved() }
 
   const concluidas = acoes.filter(a => a.status === 'done').length
   const pct        = Math.round((concluidas / acoes.length) * 100)
@@ -374,8 +318,6 @@ export default function HeaderMiniCharts() {
 
   const handleCard = (key: 'execucao' | 'periodos' | 'canais') => { if (expanded !== key) setExpanded(key); else setModal(key) }
   const exp = (k: string) => expanded === k
-
-  if (loading) return <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 12, padding: '20px 0' }}>Carregando...</div>
 
   return (
     <>
