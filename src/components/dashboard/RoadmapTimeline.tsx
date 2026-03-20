@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react"
-import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight, TrendingUp } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis, Cell } from "recharts"
+import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts"
+import { useAuth } from "../../lib/AuthContext"
 
-const STORAGE_KEY = "af_roadmap_phases"
+const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 
 interface PhaseItem {
   quarter: string
@@ -74,23 +75,32 @@ const initialPhases: PhaseItem[] = [
 ]
 
 const statusConfig = {
-  complete: { icon: CheckCircle2, label: "Completo", className: "text-emerald-600 bg-emerald-50" },
-  in_progress: { icon: Clock, label: "Em Andamento", className: "text-blue-600 bg-blue-50" },
-  pending: { icon: Pause, label: "Pendente", className: "text-gray-400 bg-gray-100" },
+  complete:    { icon: CheckCircle2, label: "Completo",     className: "text-emerald-600 bg-emerald-50" },
+  in_progress: { icon: Clock,        label: "Em Andamento", className: "text-blue-600 bg-blue-50" },
+  pending:     { icon: Pause,        label: "Pendente",     className: "text-gray-400 bg-gray-100" },
 }
 
-function EditField({ value, onChange, className = "", dark }: { value: string; onChange: (v: string) => void; className?: string; dark?: boolean }) {
+function EditField({ value, onChange, className = "", dark, isAdmin }: {
+  value: string; onChange: (v: string) => void
+  className?: string; dark?: boolean; isAdmin: boolean
+}) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
   const save = () => { onChange(draft); setEditing(false) }
+
+  if (!isAdmin) return <span className={className}>{value}</span>
+
   if (editing) return (
     <span className="inline-flex items-center gap-1">
-      <input autoFocus value={draft} onChange={e => setDraft(e.target.value)} onKeyDown={e => e.key === 'Enter' && save()}
-        className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none ${className}`} style={{ minWidth: 80 }} />
+      <input autoFocus value={draft} onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && save()}
+        className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none ${className}`}
+        style={{ minWidth: 80 }} />
       <button onClick={save} className="p-0.5 rounded bg-black/10"><Check size={11} /></button>
     </span>
   )
+
   return (
     <span className="inline-flex items-center gap-1 group/ef cursor-pointer" onClick={() => setEditing(true)}>
       <span className={className}>{value}</span>
@@ -100,26 +110,19 @@ function EditField({ value, onChange, className = "", dark }: { value: string; o
 }
 
 export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
-  const [phases, setPhases] = useState<PhaseItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        return initialPhases.map((init, i) => ({ ...init, ...parsed[i], detail: init.detail }))
-      }
-    } catch {}
-    return initialPhases
-  })
+  const { user } = useAuth()
+  const isAdmin = user?.email === ADMIN_EMAIL || user?.isAdmin === true
+
+  const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
 
-  useEffect(() => {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(phases)) } catch {}
-  }, [phases])
-
   const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
+    if (!isAdmin) return
     setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
   }
+
   const updateItem = (phaseIdx: number, itemIdx: number, value: string) => {
+    if (!isAdmin) return
     setPhases(prev => prev.map((p, i) => {
       if (i !== phaseIdx) return p
       const newItems = [...p.items]; newItems[itemIdx] = value
@@ -136,14 +139,14 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
             <div key={i} className={`rounded-xl border p-6 transition-all duration-300 group ${dark ? 'bg-white/10 border-white/10 hover:bg-white/15' : 'bg-white border-gray-100 hover:shadow-lg'}`}>
               <div className="flex flex-col md:flex-row md:items-start gap-4">
                 <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}>
-                  <EditField value={phase.quarter} onChange={v => updatePhase(i, 'quarter', v)} className="text-white font-extrabold text-sm" dark={dark} />
+                  <EditField value={phase.quarter} onChange={v => updatePhase(i, 'quarter', v)} className="text-white font-extrabold text-sm" dark={dark} isAdmin={isAdmin} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <h3 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>
-                      <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} />
+                      <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} isAdmin={isAdmin} />
                     </h3>
-                    <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} />
+                    <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} isAdmin={isAdmin} />
                     <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}>
                       <StatusIcon size={12} />{statusConfig[phase.status].label}
                     </span>
@@ -155,14 +158,14 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                     {phase.items.map((item, j) => (
                       <li key={j} className={`flex items-start gap-2 text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}>
                         <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
-                        <EditField value={item} onChange={v => updateItem(i, j, v)} className={`text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`} dark={dark} />
+                        <EditField value={item} onChange={v => updateItem(i, j, v)} className={`text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`} dark={dark} isAdmin={isAdmin} />
                       </li>
                     ))}
                   </ul>
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <div className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>
-                    <EditField value={String(phase.progress)} onChange={v => updatePhase(i, 'progress', Number(v) || 0)} className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`} dark={dark} />%
+                    <EditField value={String(phase.progress)} onChange={v => updatePhase(i, 'progress', Number(v) || 0)} className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`} dark={dark} isAdmin={isAdmin} />%
                   </div>
                   <button
                     onClick={() => setSelected(phase)}
@@ -192,13 +195,11 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
               </div>
               <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100"><X size={18} /></button>
             </div>
-
             <div className="p-6 space-y-6">
               <div className="rounded-xl p-4" style={{ background: `${selected.accent}10` }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>🎯 Objetivo</p>
                 <p className="text-sm text-gray-700">{selected.detail.objetivo}</p>
               </div>
-
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <p className="text-sm font-bold text-gray-700 mb-3">Progresso Atual</p>
@@ -225,7 +226,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                   </div>
                 </div>
               </div>
-
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-3">Curva de Progresso</p>
                 <ResponsiveContainer width="100%" height={180}>
@@ -238,7 +238,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                   </LineChart>
                 </ResponsiveContainer>
               </div>
-
               <div>
                 <p className="text-sm font-bold text-gray-700 mb-3">Radar de Competências</p>
                 <ResponsiveContainer width="100%" height={200}>
@@ -249,7 +248,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                   </RadarChart>
                 </ResponsiveContainer>
               </div>
-
               <div className="rounded-xl p-4 border-l-4" style={{ background: `${selected.accent}08`, borderColor: selected.accent }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>💡 Insight</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{selected.detail.insight}</p>
