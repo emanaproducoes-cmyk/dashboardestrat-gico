@@ -1,26 +1,23 @@
 import { useState, useEffect, useCallback } from "react"
-import { doc, getDoc, setDoc, onSnapshot } from "firebase/firestore"
+import { doc, setDoc, onSnapshot } from "firebase/firestore"
 import { db } from "./firebase"
 
-// Salva e lê dados do Firestore em tempo real
-// Todos os usuários veem as mesmas alterações feitas pelo admin
 export function useSharedData<T>(
   docId: string,
   initialValue: T
-): [T, (value: T) => Promise<void>, boolean] {
-  const [data, setData]       = useState<T>(initialValue)
-  const [loading, setLoading] = useState(true)
+): [T, (value: T) => Promise<void>] {
+  const [data, setData] = useState<T | null>(null)
 
   useEffect(() => {
     const ref = doc(db, "shared_data", docId)
-    // Escuta mudanças em tempo real
     const unsub = onSnapshot(ref, (snap) => {
       if (snap.exists()) {
         setData(snap.data().value as T)
+      } else {
+        setData(initialValue)
       }
-      setLoading(false)
     }, () => {
-      setLoading(false)
+      setData(initialValue)
     })
     return unsub
   }, [docId])
@@ -35,5 +32,5 @@ export function useSharedData<T>(
     }
   }, [docId])
 
-  return [data, save, loading]
+  return [data ?? initialValue, save]
 }
