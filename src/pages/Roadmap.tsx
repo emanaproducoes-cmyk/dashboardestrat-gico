@@ -1,3 +1,4 @@
+
 import type { PageProps } from "../lib/types"
 import React from "react"
 import RoadmapTimeline from "../components/dashboard/RoadmapTimeline"
@@ -25,7 +26,7 @@ const deliverables = [
 
 export default function Roadmap({ darkMode = false }: PageProps) {
   const { user } = useAuth()
-  const isAdmin = user?.email === ADMIN_EMAIL || user?.isAdmin === true
+  const isAdmin = !!(user && user.email === ADMIN_EMAIL)
 
   const bg = "min-h-screen p-6 md:p-8 space-y-8" + (darkMode ? "" : " bg-gray-50")
   const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
@@ -39,7 +40,7 @@ export default function Roadmap({ darkMode = false }: PageProps) {
       <section className={cardBg}>
         <h2 className={`${titleClass} mb-1`}>Roadmap Estratégico 2026</h2>
         <p className={`${subClass} mb-6`}>Linha do tempo de execução em 4 fases</p>
-        <RoadmapTimeline dark={darkMode} />
+        <RoadmapTimeline dark={darkMode} isAdmin={isAdmin} />
       </section>
 
       <section>
