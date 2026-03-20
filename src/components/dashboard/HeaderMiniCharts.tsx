@@ -42,7 +42,6 @@ const cardBase: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   borderRadius: 16,
   padding: 16,
-  transition: 'all 0.3s ease',
   cursor: 'pointer',
 }
 
@@ -146,7 +145,6 @@ export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
 
-  // Dados salvos no Firestore — visíveis por todos, mesmo após logout
   const [acoes, saveAcoes, loadingAcoes] = useSharedData<Acao[]>('acoes', ACOES_INICIAL)
   const [periodoLabels, savePeriodoLabels] = useSharedData<string[]>('periodoLabels', [...PERIODOS_LABELS])
   const [canaisLabels, saveCanaisLabels] = useSharedData<string[]>('canaisLabels', CANAIS_DEF.map(c => c.canal))
@@ -224,7 +222,6 @@ export default function HeaderMiniCharts() {
     <>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginTop: 20, marginBottom: 4, alignItems: 'start' }}>
 
-        {/* CARD 1 */}
         <div style={{ ...cardBase, border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('execucao')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -272,7 +269,6 @@ export default function HeaderMiniCharts() {
           </p>
         </div>
 
-        {/* CARD 2 */}
         <div style={{ ...cardBase, border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('periodos')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -324,7 +320,6 @@ export default function HeaderMiniCharts() {
           </p>
         </div>
 
-        {/* CARD 3 */}
         <div style={{ ...cardBase, border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}` }}
           onClick={() => handleCard('canais')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
