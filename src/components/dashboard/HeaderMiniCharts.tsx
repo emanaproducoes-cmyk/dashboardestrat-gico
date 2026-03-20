@@ -45,7 +45,7 @@ const cardBase: React.CSSProperties = {
   backdropFilter: 'blur(14px)',
   borderRadius: 16,
   padding: 16,
-  transition: 'all 0.3s ease',
+  transition: 'transform 0.2s ease, box-shadow 0.2s ease',
   cursor: 'pointer',
 }
 
@@ -232,6 +232,28 @@ function SavedBadge({ visible }: { visible: boolean }) {
   )
 }
 
+// ─── Card com hover ───────────────────────────────────────────────────────────
+function MiniCard({ border, onClick, children }: { border: string; onClick: () => void; children: React.ReactNode }) {
+  const [hovered, setHovered] = useState(false)
+  return (
+    <div
+      onClick={onClick}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={{
+        ...cardBase,
+        border,
+        transform: hovered ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: hovered ? '0 8px 32px rgba(0,0,0,0.45)' : 'none',
+        zIndex: hovered ? 2 : 1,
+        position: 'relative',
+      }}
+    >
+      {children}
+    </div>
+  )
+}
+
 export default function HeaderMiniCharts() {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
@@ -252,7 +274,6 @@ export default function HeaderMiniCharts() {
 
   const flashSaved = useCallback(() => { setSavedFlag(true); setTimeout(() => setSavedFlag(false), 1800) }, [])
 
-  // ── Escuta Firestore em tempo real, sem bloquear a renderização ──
   useEffect(() => {
     const unsub = onSnapshot(FIRESTORE_DOC, (snap) => {
       if (snap.exists()) {
@@ -325,7 +346,7 @@ export default function HeaderMiniCharts() {
         <SavedBadge visible={savedFlag} />
 
         {/* CARD 1 — Progresso */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}` }} onClick={() => handleCard('execucao')}>
+        <MiniCard border={`1px solid ${exp('execucao') ? 'rgba(52,211,153,0.5)' : 'rgba(255,255,255,0.2)'}`} onClick={() => handleCard('execucao')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <EditableLabel value={labelProgresso} onChange={handleLabelProgresso} isAdmin={isAdmin} />
             <span style={{ background: 'rgba(52,211,153,0.2)', color: '#6ee7b7', fontSize: 11, fontWeight: 800, borderRadius: 99, padding: '2px 10px', border: '1px solid rgba(52,211,153,0.35)', flexShrink: 0 }}>{pct}%</span>
@@ -360,10 +381,10 @@ export default function HeaderMiniCharts() {
           <p style={{ fontSize: 9, color: exp('execucao') ? '#34d399' : 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 3, margin: 0 }}>
             {exp('execucao') ? 'Clique novamente para ver detalhes' : 'Clique para ampliar'}<ChevronRight size={8} />
           </p>
-        </div>
+        </MiniCard>
 
         {/* CARD 2 — Calendário */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}` }} onClick={() => handleCard('periodos')}>
+        <MiniCard border={`1px solid ${exp('periodos') ? 'rgba(56,189,248,0.5)' : 'rgba(255,255,255,0.2)'}`} onClick={() => handleCard('periodos')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <EditableLabel value={labelCalendario} onChange={handleLabelCalendario} isAdmin={isAdmin} />
             <Calendar size={13} color="rgba(255,255,255,0.65)" />
@@ -394,10 +415,10 @@ export default function HeaderMiniCharts() {
           <p style={{ fontSize: 9, color: exp('periodos') ? '#38bdf8' : 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 12 }}>
             {exp('periodos') ? 'Clique novamente para editar' : 'Clique para ampliar'}<ChevronRight size={8} />
           </p>
-        </div>
+        </MiniCard>
 
         {/* CARD 3 — Canais */}
-        <div style={{ ...cardBase, border: `1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}` }} onClick={() => handleCard('canais')}>
+        <MiniCard border={`1px solid ${exp('canais') ? 'rgba(250,204,21,0.5)' : 'rgba(255,255,255,0.2)'}`} onClick={() => handleCard('canais')}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <EditableLabel value={labelCanais} onChange={handleLabelCanais} isAdmin={isAdmin} />
             <BarChart2 size={13} color="rgba(255,255,255,0.65)" />
@@ -419,7 +440,7 @@ export default function HeaderMiniCharts() {
           <p style={{ fontSize: 9, color: exp('canais') ? '#facc15' : 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 3, marginTop: 12 }}>
             {exp('canais') ? 'Clique novamente para editar' : 'Clique para ampliar'}<ChevronRight size={8} />
           </p>
-        </div>
+        </MiniCard>
       </div>
 
       {/* Modal — Todas as Ações */}
