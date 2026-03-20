@@ -83,11 +83,12 @@ const statusConfig = {
   pending:     { icon: Pause,        label: "Pendente",     className: "text-gray-400 bg-gray-100" },
 }
 
-async function saveToFirestore(phases: PhaseItem[]) {
+async function saveToFirestore(phases: PhaseItem[]): Promise<void> {
   try {
-    await setDoc(FIRESTORE_DOC, { phases })
+    await setDoc(FIRESTORE_DOC, { phases }, { merge: false })
+    console.log('✅ Salvo no Firestore:', phases.map(p => `${p.quarter}:${p.progress}%`).join(', '))
   } catch (e) {
-    console.error('Erro ao salvar roadmap:', e)
+    console.error('❌ Erro ao salvar roadmap:', e)
   }
 }
 
@@ -120,7 +121,6 @@ function EditField({ value, onChange, className = "", dark, isAdmin }: {
   )
 }
 
-// ─── Badge de salvo ───────────────────────────────────────────────────────────
 function SavedBadge({ visible }: { visible: boolean }) {
   return (
     <div style={{
@@ -153,21 +153,31 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
     const unsub = onSnapshot(FIRESTORE_DOC, (snap) => {
       if (snap.exists()) {
         const data = snap.data()
-        if (data.phases) setPhases(data.phases)
+        if (data.phases) {
+          setPhases(data.phases)
+          console.log('📥 Dados carregados do Firestore')
+        }
       } else {
+        console.log('📝 Documento não existe, criando...')
         saveToFirestore(initialPhases)
       }
     })
     return () => unsub()
   }, [])
 
-  // ── Mutações com save automático ──
+  // ── Atualiza selected quando phases mudar ──
+  useEffect(() => {
+    if (selected) {
+      const updated = phases.find(p => p.quarter === selected.quarter)
+      if (updated) setSelected(updated)
+    }
+  }, [phases])
+
   const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
     if (!isAdmin) return
     setPhases(prev => {
       const next = prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p)
-      saveToFirestore(next)
-      flashSaved()
+      saveToFirestore(next).then(() => flashSaved())
       return next
     })
   }
@@ -180,19 +190,10 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
         const newItems = [...p.items]; newItems[itemIdx] = value
         return { ...p, items: newItems }
       })
-      saveToFirestore(next)
-      flashSaved()
+      saveToFirestore(next).then(() => flashSaved())
       return next
     })
   }
-
-  // ── Atualiza o selected quando phases mudar ──
-  useEffect(() => {
-    if (selected) {
-      const updated = phases.find(p => p.quarter === selected.quarter)
-      if (updated) setSelected(updated)
-    }
-  }, [phases])
 
   return (
     <>
@@ -213,7 +214,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                       <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} isAdmin={isAdmin} />
                     </h3>
                     <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} isAdmin={isAdmin} />
-                    {/* Status — clicável apenas para admin */}
                     {isAdmin ? (
                       <select
                         value={phase.status}
@@ -244,7 +244,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                   </ul>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  {/* Progresso — editável para admin */}
                   {isAdmin ? (
                     <div className="flex items-center gap-1">
                       <input
@@ -252,7 +251,7 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                         value={phase.progress}
                         onChange={e => updatePhase(i, 'progress', Math.min(100, Math.max(0, Number(e.target.value))))}
                         onClick={e => e.stopPropagation()}
-                        className={`w-16 text-right text-2xl font-extrabold bg-transparent border-b outline-none ${dark ? 'text-white/20 border-white/20' : 'text-gray-200 border-gray-200'}`}
+                        className={`w-16 text-right text-2xl font-extrabold bg-transparent border-b outline-none ${dark ? 'text-white/40 border-white/20' : 'text-gray-300 border-gray-200'}`}
                       />
                       <span className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>%</span>
                     </div>
