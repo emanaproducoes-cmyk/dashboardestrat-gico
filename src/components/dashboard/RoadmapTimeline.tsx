@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts"
-import { useAuth } from "../../lib/AuthContext"
-
-const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 
 interface PhaseItem {
   quarter: string
@@ -109,10 +106,7 @@ function EditField({ value, onChange, className = "", dark, isAdmin }: {
   )
 }
 
-export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
-  const { user } = useAuth()
-  const isAdmin = !!(user && user.email === ADMIN_EMAIL)
-
+export default function RoadmapTimeline({ dark, isAdmin = false }: { dark?: boolean; isAdmin?: boolean }) {
   const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
 
@@ -190,72 +184,4 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${selected.color} flex items-center justify-center text-white font-extrabold text-xl`}>{selected.quarter}</div>
                 <div>
                   <h2 className="text-2xl font-extrabold text-gray-900">{selected.title}</h2>
-                  <p className="text-sm text-gray-500">{selected.period} · {statusConfig[selected.status].label}</p>
-                </div>
-              </div>
-              <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100"><X size={18} /></button>
-            </div>
-            <div className="p-6 space-y-6">
-              <div className="rounded-xl p-4" style={{ background: `${selected.accent}10` }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>🎯 Objetivo</p>
-                <p className="text-sm text-gray-700">{selected.detail.objetivo}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-bold text-gray-700 mb-3">Progresso Atual</p>
-                  <div className="bg-gray-50 rounded-xl p-4 text-center">
-                    <div className="text-5xl font-extrabold mb-2" style={{ color: selected.accent }}>{selected.progress}%</div>
-                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                      <div className={`h-full rounded-full bg-gradient-to-r ${selected.color}`} style={{ width: `${selected.progress}%`, transition: 'width 1s ease' }} />
-                    </div>
-                    <p className="text-xs text-gray-400 mt-2">Meta: 100%</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-sm font-bold text-gray-700 mb-3">KPIs</p>
-                  <div className="space-y-2">
-                    {selected.detail.kpis.map((k, i) => (
-                      <div key={i} className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
-                        <span className="text-xs text-gray-600">{k.label}</span>
-                        <div className="text-right">
-                          <span className="text-sm font-bold" style={{ color: selected.accent }}>{k.val}</span>
-                          <span className="text-xs text-gray-400 ml-1">/ {k.meta}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-700 mb-3">Curva de Progresso</p>
-                <ResponsiveContainer width="100%" height={180}>
-                  <LineChart data={selected.detail.lineData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                    <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
-                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
-                    <Tooltip formatter={(v: number) => [`${v}%`, "Progresso"]} />
-                    <Line type="monotone" dataKey="progresso" stroke={selected.accent} strokeWidth={3} dot={{ r: 5, fill: selected.accent }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-              <div>
-                <p className="text-sm font-bold text-gray-700 mb-3">Radar de Competências</p>
-                <ResponsiveContainer width="100%" height={200}>
-                  <RadarChart data={selected.detail.radarData}>
-                    <PolarGrid stroke="#e5e7eb" />
-                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
-                    <Radar dataKey="val" stroke={selected.accent} fill={selected.accent} fillOpacity={0.25} strokeWidth={2} />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="rounded-xl p-4 border-l-4" style={{ background: `${selected.accent}08`, borderColor: selected.accent }}>
-                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>💡 Insight</p>
-                <p className="text-sm text-gray-700 leading-relaxed">{selected.detail.insight}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-    </>
-  )
-}
+                  <p className="text-sm text
