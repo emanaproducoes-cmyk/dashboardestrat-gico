@@ -2,8 +2,11 @@ import React, { useState, useEffect } from "react"
 import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight } from "lucide-react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts"
 import { useAuth } from "../../lib/AuthContext"
+import { db } from "../../lib/firebase"
+import { doc, setDoc, onSnapshot } from "firebase/firestore"
 
 const ADMIN_EMAIL = "emanaproducoes@gmail.com"
+const FIRESTORE_DOC = doc(db, 'dashboard', 'roadmap')
 
 interface PhaseItem {
   quarter: string
@@ -80,6 +83,14 @@ const statusConfig = {
   pending:     { icon: Pause,        label: "Pendente",     className: "text-gray-400 bg-gray-100" },
 }
 
+async function saveToFirestore(phases: PhaseItem[]) {
+  try {
+    await setDoc(FIRESTORE_DOC, { phases })
+  } catch (e) {
+    console.error('Erro ao salvar roadmap:', e)
+  }
+}
+
 function EditField({ value, onChange, className = "", dark, isAdmin }: {
   value: string; onChange: (v: string) => void
   className?: string; dark?: boolean; isAdmin: boolean
@@ -109,29 +120,84 @@ function EditField({ value, onChange, className = "", dark, isAdmin }: {
   )
 }
 
+// ─── Badge de salvo ───────────────────────────────────────────────────────────
+function SavedBadge({ visible }: { visible: boolean }) {
+  return (
+    <div style={{
+      position: 'fixed', bottom: 24, right: 24, zIndex: 9999,
+      background: 'rgba(52,211,153,0.15)',
+      border: '1px solid rgba(52,211,153,0.4)',
+      borderRadius: 99, padding: '6px 16px',
+      fontSize: 12, color: '#34d399', fontWeight: 700,
+      opacity: visible ? 1 : 0,
+      transition: 'opacity 0.6s ease',
+      pointerEvents: 'none',
+    }}>
+      ✓ Alterações salvas
+    </div>
+  )
+}
+
 export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
   const { user } = useAuth()
   const isAdmin = (user as any)?.email === ADMIN_EMAIL || (user as any)?.isAdmin === true
 
   const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
+  const [savedFlag, setSavedFlag] = useState(false)
 
+  const flashSaved = () => { setSavedFlag(true); setTimeout(() => setSavedFlag(false), 2000) }
+
+  // ── Escuta Firestore em tempo real ──
+  useEffect(() => {
+    const unsub = onSnapshot(FIRESTORE_DOC, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data()
+        if (data.phases) setPhases(data.phases)
+      } else {
+        saveToFirestore(initialPhases)
+      }
+    })
+    return () => unsub()
+  }, [])
+
+  // ── Mutações com save automático ──
   const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
     if (!isAdmin) return
-    setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
+    setPhases(prev => {
+      const next = prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p)
+      saveToFirestore(next)
+      flashSaved()
+      return next
+    })
   }
 
   const updateItem = (phaseIdx: number, itemIdx: number, value: string) => {
     if (!isAdmin) return
-    setPhases(prev => prev.map((p, i) => {
-      if (i !== phaseIdx) return p
-      const newItems = [...p.items]; newItems[itemIdx] = value
-      return { ...p, items: newItems }
-    }))
+    setPhases(prev => {
+      const next = prev.map((p, i) => {
+        if (i !== phaseIdx) return p
+        const newItems = [...p.items]; newItems[itemIdx] = value
+        return { ...p, items: newItems }
+      })
+      saveToFirestore(next)
+      flashSaved()
+      return next
+    })
   }
+
+  // ── Atualiza o selected quando phases mudar ──
+  useEffect(() => {
+    if (selected) {
+      const updated = phases.find(p => p.quarter === selected.quarter)
+      if (updated) setSelected(updated)
+    }
+  }, [phases])
 
   return (
     <>
+      <SavedBadge visible={savedFlag} />
+
       <div className="space-y-4">
         {phases.map((phase, i) => {
           const StatusIcon = statusConfig[phase.status].icon
@@ -147,9 +213,23 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                       <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} isAdmin={isAdmin} />
                     </h3>
                     <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} isAdmin={isAdmin} />
-                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}>
-                      <StatusIcon size={12} />{statusConfig[phase.status].label}
-                    </span>
+                    {/* Status — clicável apenas para admin */}
+                    {isAdmin ? (
+                      <select
+                        value={phase.status}
+                        onChange={e => updatePhase(i, 'status', e.target.value)}
+                        onClick={e => e.stopPropagation()}
+                        className={`text-xs font-medium px-2.5 py-1 rounded-full border-0 outline-none cursor-pointer ${statusConfig[phase.status].className}`}
+                      >
+                        <option value="complete">Completo</option>
+                        <option value="in_progress">Em Andamento</option>
+                        <option value="pending">Pendente</option>
+                      </select>
+                    ) : (
+                      <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}>
+                        <StatusIcon size={12} />{statusConfig[phase.status].label}
+                      </span>
+                    )}
                   </div>
                   <div className={`w-full h-2 rounded-full overflow-hidden mb-4 ${dark ? 'bg-white/10' : 'bg-gray-100'}`}>
                     <div className={`h-full rounded-full bg-gradient-to-r ${phase.color} transition-all duration-700`} style={{ width: `${phase.progress}%` }} />
@@ -164,9 +244,21 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
                   </ul>
                 </div>
                 <div className="flex flex-col items-end gap-2">
-                  <div className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>
-                    <EditField value={String(phase.progress)} onChange={v => updatePhase(i, 'progress', Number(v) || 0)} className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`} dark={dark} isAdmin={isAdmin} />%
-                  </div>
+                  {/* Progresso — editável para admin */}
+                  {isAdmin ? (
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number" min={0} max={100}
+                        value={phase.progress}
+                        onChange={e => updatePhase(i, 'progress', Math.min(100, Math.max(0, Number(e.target.value))))}
+                        onClick={e => e.stopPropagation()}
+                        className={`w-16 text-right text-2xl font-extrabold bg-transparent border-b outline-none ${dark ? 'text-white/20 border-white/20' : 'text-gray-200 border-gray-200'}`}
+                      />
+                      <span className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>%</span>
+                    </div>
+                  ) : (
+                    <div className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>{phase.progress}%</div>
+                  )}
                   <button
                     onClick={() => setSelected(phase)}
                     className="flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg"
