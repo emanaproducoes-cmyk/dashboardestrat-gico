@@ -111,7 +111,7 @@ function EditField({ value, onChange, className = "", dark, isAdmin }: {
 
 export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
   const { user } = useAuth()
-  const isAdmin = user?.email === ADMIN_EMAIL || user?.isAdmin === true
+  const isAdmin = !!(user && user.email === ADMIN_EMAIL)
 
   const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
