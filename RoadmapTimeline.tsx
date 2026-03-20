@@ -4,7 +4,6 @@ import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianG
 import { useAuth } from "../../lib/AuthContext"
 
 const ADMIN_EMAIL = "emanaproducoes@gmail.com"
-const STORAGE_KEY = "af_roadmap_phases"
 
 interface PhaseItem {
   quarter: string
@@ -114,23 +113,8 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
   const { user } = useAuth()
   const isAdmin = (user as any)?.email === ADMIN_EMAIL || (user as any)?.isAdmin === true
 
-  const [phases, setPhases] = useState<PhaseItem[]>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (saved) {
-        const parsed = JSON.parse(saved)
-        return initialPhases.map((init, i) => ({ ...init, ...parsed[i], detail: init.detail }))
-      }
-    } catch {}
-    return initialPhases
-  })
+  const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
-
-  useEffect(() => {
-    if (isAdmin) {
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(phases)) } catch {}
-    }
-  }, [phases, isAdmin])
 
   const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
     if (!isAdmin) return
