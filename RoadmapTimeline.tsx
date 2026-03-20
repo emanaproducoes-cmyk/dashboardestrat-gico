@@ -5,7 +5,6 @@ import { useAuth } from "../../lib/AuthContext"
 import { db } from "../../lib/firebase"
 import { doc, setDoc, onSnapshot } from "firebase/firestore"
 
-const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 const FIRESTORE_DOC = doc(db, 'dashboard', 'roadmap')
 
 interface PhaseItem {
@@ -140,7 +139,9 @@ function SavedBadge({ visible }: { visible: boolean }) {
 
 export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
   const { user } = useAuth()
-  const isAdmin = (user as any)?.email === ADMIN_EMAIL || (user as any)?.isAdmin === true
+
+  // ── CORREÇÃO: usa user.isAdmin diretamente do AuthContext ──
+  const isAdmin = user?.isAdmin ?? false
 
   const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
   const [selected, setSelected] = useState<PhaseItem | null>(null)
@@ -148,7 +149,6 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
 
   const flashSaved = () => { setSavedFlag(true); setTimeout(() => setSavedFlag(false), 2000) }
 
-  // ── Escuta Firestore em tempo real ──
   useEffect(() => {
     const unsub = onSnapshot(FIRESTORE_DOC, (snap) => {
       if (snap.exists()) {
@@ -158,14 +158,13 @@ export default function RoadmapTimeline({ dark }: { dark?: boolean }) {
           console.log('📥 Dados carregados do Firestore')
         }
       } else {
-        console.log('📝 Documento não existe, criando...')
+        console.log('📝 Documento não existe, inicializando...')
         saveToFirestore(initialPhases)
       }
     })
     return () => unsub()
   }, [])
 
-  // ── Atualiza selected quando phases mudar ──
   useEffect(() => {
     if (selected) {
       const updated = phases.find(p => p.quarter === selected.quarter)
