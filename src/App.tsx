@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { FontSettingsProvider } from './lib/FontSettingsContext'
+import { UserPhotoProvider } from './lib/UserPhotoContext'
 import LoginPage from './pages/LoginPage'
 import Layout from './Layout'
 import Home from './pages/Home'
@@ -67,7 +68,9 @@ export default function App() {
       <Router>
         <AuthProvider>
           <FontSettingsProvider>
-            <AppRoutes />
+            <UserPhotoProvider>
+              <AppRoutes />
+            </UserPhotoProvider>
           </FontSettingsProvider>
         </AuthProvider>
       </Router>
