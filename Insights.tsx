@@ -3,36 +3,13 @@ import React from "react"
 import HeroHeader from "../components/dashboard/HeroHeader"
 import ContentDistribution from "../components/dashboard/ContentDistribution"
 import { Target, BookOpen, Star, Megaphone, CheckCircle2 } from "lucide-react"
+import { useFontSettings } from "../lib/FontSettingsContext"
 
 const pillars = [
-  {
-    icon: Target,
-    bg: "bg-blue-50",
-    iconColor: "text-blue-600",
-    title: "Missão",
-    text: "Transformar o potencial econômico da Amazônia em realidade, conectando empreendedores visionários a oportunidades de financiamento estratégico e desenvolvimento sustentável."
-  },
-  {
-    icon: Star,
-    bg: "bg-violet-50",
-    iconColor: "text-violet-600",
-    title: "Posicionamento",
-    text: "AF Consultoria é a referência em projetos econômico-financeiros aprovados pelo FNO e BNDES, com 96% de taxa de aprovação e mais de 15 anos de experiência no mercado amazônico."
-  },
-  {
-    icon: BookOpen,
-    bg: "bg-amber-50",
-    iconColor: "text-amber-600",
-    title: "Arquétipo",
-    text: "O Sábio — Guia experiente que transforma complexidade em clareza, convertendo projetos em resultados concretos através de conhecimento profundo e rigor técnico."
-  },
-  {
-    icon: Megaphone,
-    bg: "bg-rose-50",
-    iconColor: "text-rose-600",
-    title: "Tom de Voz",
-    text: "Técnico e confiante, mas acessível. Autoridade sem arrogância. Inspirador sem ser vago. Fala a língua do empresário, não do acadêmico."
-  },
+  { icon: Target, bg: "bg-blue-50", iconColor: "text-blue-600", title: "Missão", text: "Transformar o potencial econômico da Amazônia em realidade, conectando empreendedores visionários a oportunidades de financiamento estratégico e desenvolvimento sustentável." },
+  { icon: Star, bg: "bg-violet-50", iconColor: "text-violet-600", title: "Posicionamento", text: "AF Consultoria é a referência em projetos econômico-financeiros aprovados pelo FNO e BNDES, com 96% de taxa de aprovação e mais de 15 anos de experiência no mercado amazônico." },
+  { icon: BookOpen, bg: "bg-amber-50", iconColor: "text-amber-600", title: "Arquétipo", text: "O Sábio — Guia experiente que transforma complexidade em clareza, convertendo projetos em resultados concretos através de conhecimento profundo e rigor técnico." },
+  { icon: Megaphone, bg: "bg-rose-50", iconColor: "text-rose-600", title: "Tom de Voz", text: "Técnico e confiante, mas acessível. Autoridade sem arrogância. Inspirador sem ser vago. Fala a língua do empresário, não do acadêmico." },
 ]
 
 const contentTypes = [
@@ -53,21 +30,34 @@ const annualGoals = [
   "Produzir pelo menos 2 webinars ou lives temáticas",
 ]
 
-export default function Conteudo({ darkMode = false }: PageProps) {
+export default function Insights({ darkMode = false }: PageProps) {
+  const { fontSettings } = useFontSettings()
+
   const bg = "min-h-screen p-6 md:p-8 space-y-8" + (darkMode ? "" : " bg-gray-50")
-  const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
-  const subClass = darkMode ? "text-white/50 text-sm" : "text-gray-500 text-sm"
   const cardBg = darkMode ? "bg-white/10 border border-white/10 rounded-2xl p-5" : "bg-white border border-gray-100 rounded-2xl p-5 shadow-sm"
   const textClass = darkMode ? "text-white/70" : "text-gray-600"
+
+  const titleStyle = {
+    fontSize: `${fontSettings.titulo.size}px`,
+    textAlign: fontSettings.titulo.align as any,
+    color: darkMode ? "#ffffff" : "#111827",
+    fontWeight: 700,
+    marginBottom: "4px",
+  }
+  const subStyle = {
+    fontSize: `${fontSettings.subtitulo1.size}px`,
+    textAlign: fontSettings.subtitulo1.align as any,
+    color: darkMode ? "rgba(255,255,255,0.5)" : "#6b7280",
+    marginBottom: "20px",
+  }
 
   return (
     <div className={bg}>
       <HeroHeader />
 
-      {/* Brand positioning */}
       <section>
-        <h2 className={`${titleClass} mb-1`}>Posicionamento de Marca</h2>
-        <p className={`${subClass} mb-5`}>A identidade estratégica da AF Consultoria & Projetos</p>
+        <p style={titleStyle}>Posicionamento de Marca</p>
+        <p style={subStyle}>A identidade estratégica da AF Consultoria & Projetos</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {pillars.map((p, i) => {
             const Icon = p.icon
@@ -84,15 +74,13 @@ export default function Conteudo({ darkMode = false }: PageProps) {
         </div>
       </section>
 
-      {/* Content distribution */}
       <section className={cardBg}>
         <ContentDistribution dark={darkMode} />
       </section>
 
-      {/* Content types detail */}
       <section>
-        <h2 className={`${titleClass} mb-1`}>Tipos de Conteúdo</h2>
-        <p className={`${subClass} mb-5`}>Mix estratégico de formatos e objetivos</p>
+        <p style={titleStyle}>Tipos de Conteúdo</p>
+        <p style={subStyle}>Mix estratégico de formatos e objetivos</p>
         <div className="space-y-3">
           {contentTypes.map((ct, i) => (
             <div key={i} className={`${cardBg} flex items-center gap-4`}>
@@ -102,7 +90,7 @@ export default function Conteudo({ darkMode = false }: PageProps) {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between mb-1">
                   <h3 className={`font-bold text-sm ${darkMode ? 'text-white' : 'text-gray-900'}`}>{ct.label}</h3>
-                  <span className={`text-xs ${subClass}`}>{ct.pct}% do mix</span>
+                  <span className="text-xs" style={{ color: darkMode ? "rgba(255,255,255,0.5)" : "#6b7280" }}>{ct.pct}% do mix</span>
                 </div>
                 <p className={`text-xs ${textClass}`}>{ct.desc}</p>
                 <div className={`mt-2 h-1.5 rounded-full overflow-hidden ${darkMode ? 'bg-white/10' : 'bg-gray-100'}`}>
@@ -114,10 +102,9 @@ export default function Conteudo({ darkMode = false }: PageProps) {
         </div>
       </section>
 
-      {/* Annual goals */}
       <section>
-        <h2 className={`${titleClass} mb-1`}>Metas Anuais de Conteúdo</h2>
-        <p className={`${subClass} mb-5`}>Objetivos de produção para o ciclo 2026</p>
+        <p style={titleStyle}>Metas Anuais de Conteúdo</p>
+        <p style={subStyle}>Objetivos de produção para o ciclo 2026</p>
         <div className={cardBg}>
           <ul className="space-y-3">
             {annualGoals.map((goal, i) => (
