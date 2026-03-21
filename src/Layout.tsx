@@ -11,7 +11,7 @@ import { useAuth } from "./lib/AuthContext"
 
 const navItems = [
   { name: "Visão Geral", path: "/", icon: LayoutDashboard },
-  { name: "KPIs", path: "/KPIs", icon: TrendingUp, dot: true },
+  { name: "KPIs", path: "/KPIs", icon: TrendingUp },
   { name: "Canais", path: "/Canais", icon: Radio },
   { name: "Conteúdo", path: "/Conteudo", icon: FileText },
   { name: "Funil", path: "/Funil", icon: FilterIcon },
@@ -56,7 +56,6 @@ export default function Layout({ children }: LayoutProps) {
   const navInactive = dark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-500 hover:text-blue-900 hover:bg-blue-50"
   const navActiveIcon = dark ? "text-blue-300" : "text-blue-600"
   const dotActive = dark ? "bg-white" : "bg-blue-600"
-  const dotInactive = dark ? "bg-blue-400" : "bg-blue-400"
   const brandText1 = dark ? "text-white/30" : "text-gray-400"
   const themeBtn = dark ? "text-white/50 hover:text-white hover:bg-white/10" : "text-gray-500 hover:text-blue-900 hover:bg-blue-50"
 
@@ -92,8 +91,8 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <Icon size={18} className={isActive ? navActiveIcon : ''} />
                 {!collapsed && <span>{item.name}</span>}
-                {item.dot && !collapsed && (
-                  <span className={`ml-auto w-2 h-2 rounded-full ${isActive ? dotActive : dotInactive}`} />
+                {isActive && !collapsed && (
+                  <span className={`ml-auto w-2 h-2 rounded-full ${dotActive}`} />
                 )}
               </button>
             )
@@ -116,7 +115,9 @@ export default function Layout({ children }: LayoutProps) {
               >
                 <Settings size={18} className={location.pathname === "/Configuracoes" ? navActiveIcon : ''} />
                 {!collapsed && <span>Configurações</span>}
-                {!collapsed && <Shield size={10} className="ml-auto text-blue-400 flex-shrink-0" />}
+                {location.pathname === "/Configuracoes" && !collapsed && (
+                  <span className={`ml-auto w-2 h-2 rounded-full ${dotActive}`} />
+                )}
               </button>
             </>
           )}
