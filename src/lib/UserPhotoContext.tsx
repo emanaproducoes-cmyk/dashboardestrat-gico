@@ -10,6 +10,22 @@ interface UserPhotoContextValue {
 
 const UserPhotoContext = createContext<UserPhotoContextValue | null>(null)
 
+function compressImage(base64: string, maxSize = 200): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement("canvas")
+      const ratio = Math.min(maxSize / img.width, maxSize / img.height)
+      canvas.width = img.width * ratio
+      canvas.height = img.height * ratio
+      const ctx = canvas.getContext("2d")!
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+      resolve(canvas.toDataURL("image/jpeg", 0.7))
+    }
+    img.src = base64
+  })
+}
+
 export function UserPhotoProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [photo, setPhoto] = useState<string | null>(null)
@@ -26,9 +42,10 @@ export function UserPhotoProvider({ children }: { children: React.ReactNode }) {
 
   const savePhoto = useCallback(async (base64: string) => {
     if (!user?.id) return
+    const compressed = await compressImage(base64)
     const ref = doc(db, "userPhotos", user.id)
-    await setDoc(ref, { photo: base64 })
-    setPhoto(base64)
+    await setDoc(ref, { photo: compressed })
+    setPhoto(compressed)
   }, [user?.id])
 
   return (
