@@ -4,22 +4,24 @@ import type { GradientOption } from "../../lib/types"
 import { useAuth } from "../../lib/AuthContext"
 import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import HeaderMiniCharts from "./HeaderMiniCharts"
+import { useFontSettings } from "../../lib/FontSettingsContext"
 
 interface EditableFieldProps {
   value: string
   onChange: (v: string) => void
   className?: string
+  style?: React.CSSProperties
   multiline?: boolean
   isAdmin: boolean
 }
 
-function EditableField({ value, onChange, className = "", multiline, isAdmin }: EditableFieldProps) {
+function EditableField({ value, onChange, className = "", style, multiline, isAdmin }: EditableFieldProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
   const save = () => { onChange(draft); setEditing(false) }
 
-  if (!isAdmin) return <span className={className}>{value}</span>
+  if (!isAdmin) return <span className={className} style={style}>{value}</span>
 
   if (editing) {
     const sharedProps = {
@@ -28,6 +30,7 @@ function EditableField({ value, onChange, className = "", multiline, isAdmin }: 
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
       onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" && !multiline) save() },
       className: `bg-white/20 border border-white/40 rounded px-2 py-1 text-white outline-none min-w-[120px] ${className}`,
+      style,
     }
     return (
       <span className="inline-flex items-center gap-1">
@@ -44,7 +47,7 @@ function EditableField({ value, onChange, className = "", multiline, isAdmin }: 
 
   return (
     <span className="inline-flex items-center gap-1 group cursor-pointer" onClick={() => setEditing(true)}>
-      <span className={className}>{value}</span>
+      <span className={className} style={style}>{value}</span>
       <Pencil size={12} className="text-white/40 group-hover:text-white/80 transition-colors opacity-0 group-hover:opacity-100" />
     </span>
   )
@@ -96,6 +99,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const gradientCss = accentGradient?.css || "linear-gradient(135deg, #3B6AF5, #7B35EF)"
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
+  const { fontSettings } = useFontSettings()
 
   const load = (key: string, def: string) => getGlobalItem(key) || def
 
@@ -176,16 +180,49 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
               <Sparkles size={11} className="text-blue-200 flex-shrink-0" />
-              <EditableField value={tagline} onChange={v => { setTagline(v); save('hero_tagline', v) }} className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest" isAdmin={isAdmin} />
+              <EditableField
+                value={tagline}
+                onChange={v => { setTagline(v); save('hero_tagline', v) }}
+                className="text-[10px] font-semibold text-blue-200 uppercase tracking-widest"
+                isAdmin={isAdmin}
+              />
             </div>
             <h1 className="leading-tight">
-              <EditableField value={companyName} onChange={v => { setCompanyName(v); save('hero_companyName', v) }} className="text-2xl font-extrabold text-white" isAdmin={isAdmin} />
+              <EditableField
+                value={companyName}
+                onChange={v => { setCompanyName(v); save('hero_companyName', v) }}
+                className="font-extrabold text-white"
+                style={{
+                  fontSize: `${fontSettings.titulo.size}px`,
+                  textAlign: fontSettings.titulo.align,
+                }}
+                isAdmin={isAdmin}
+              />
             </h1>
             <p className="mt-1">
-              <EditableField value={subtitle} onChange={v => { setSubtitle(v); save('hero_subtitle', v) }} className="text-sm text-blue-100/80" isAdmin={isAdmin} />
+              <EditableField
+                value={subtitle}
+                onChange={v => { setSubtitle(v); save('hero_subtitle', v) }}
+                className="text-blue-100/80"
+                style={{
+                  fontSize: `${fontSettings.subtitulo1.size}px`,
+                  textAlign: fontSettings.subtitulo1.align,
+                }}
+                isAdmin={isAdmin}
+              />
             </p>
             <p className="mt-1 hidden md:block">
-              <EditableField value={description} onChange={v => { setDescription(v); save('hero_description', v) }} className="text-xs text-blue-200/60 leading-relaxed" multiline isAdmin={isAdmin} />
+              <EditableField
+                value={description}
+                onChange={v => { setDescription(v); save('hero_description', v) }}
+                className="text-blue-200/60 leading-relaxed"
+                style={{
+                  fontSize: `${fontSettings.subtitulo2.size}px`,
+                  textAlign: fontSettings.subtitulo2.align,
+                }}
+                multiline
+                isAdmin={isAdmin}
+              />
             </p>
           </div>
         </div>
