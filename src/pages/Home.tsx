@@ -11,6 +11,7 @@ import PillarModal from "../components/dashboard/PillarModal"
 import { Award, Radio, Users, Target, ArrowRight, Pencil, Check } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { getGlobalItem, setGlobalItem } from "../lib/auth"
+import { useFontSettings } from "../lib/FontSettingsContext"
 
 const defaultPillars = [
   { id: "autoridade", label: "Autoridade Digital", icon: Award, gradient: "from-violet-600 to-purple-800", desc: "Posicionamento como referência em FNO" },
@@ -60,6 +61,7 @@ function InlineEditable({ value, onChange, className = "", textColor, isAdmin }:
 export default function Home({ darkMode = true, accentGradient }: PageProps) {
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
+  const { fontSettings } = useFontSettings()
 
   const [selectedPillar, setSelectedPillar] = useState<string | null>(null)
   const [pillars, setPillars] = useState(() => {
@@ -82,16 +84,29 @@ export default function Home({ darkMode = true, accentGradient }: PageProps) {
   }
 
   const sectionBg = darkMode ? "bg-white/8 border border-white/10" : "bg-white border border-gray-100 shadow-sm"
-  const sectionTitle = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
-  const sectionSub = darkMode ? "text-white/40 text-sm" : "text-gray-400 text-sm"
+
+  const titleStyle = {
+    fontSize: `${fontSettings.titulo.size}px`,
+    textAlign: fontSettings.titulo.align as any,
+    color: darkMode ? "#ffffff" : "#111827",
+    fontWeight: 700,
+    marginBottom: "4px",
+  }
+
+  const sub1Style = {
+    fontSize: `${fontSettings.subtitulo1.size}px`,
+    textAlign: fontSettings.subtitulo1.align as any,
+    color: darkMode ? "rgba(255,255,255,0.4)" : "#9ca3af",
+    marginBottom: "20px",
+  }
 
   return (
     <div className="min-h-screen p-6 md:p-8 space-y-6 md:space-y-8">
       <EditableHeroHeader accentGradient={accentGradient} />
 
       <section>
-        <h2 className={`${sectionTitle} mb-1`}>Pilares Estratégicos</h2>
-        <p className={`${sectionSub} mb-5`}>Os quatro vetores do crescimento digital 2026</p>
+        <p style={titleStyle}>Pilares Estratégicos</p>
+        <p style={sub1Style}>Os quatro vetores do crescimento digital 2026</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {pillars.map(p => {
             const Icon = p.icon
@@ -134,14 +149,14 @@ export default function Home({ darkMode = true, accentGradient }: PageProps) {
       </section>
 
       <section>
-        <h2 className={`${sectionTitle} mb-1`}>OKRs Estratégicos</h2>
-        <p className={`${sectionSub} mb-5`}>Objetivos e resultados-chave do ciclo 2026</p>
+        <p style={titleStyle}>OKRs Estratégicos</p>
+        <p style={sub1Style}>Objetivos e resultados-chave do ciclo 2026</p>
         <OKRNightingaleChart dark={darkMode} accentGradient={accentGradient} />
       </section>
 
       <section className={`rounded-2xl p-6 ${sectionBg}`}>
-        <h2 className={`${sectionTitle} mb-1`}>Evolução de Seguidores</h2>
-        <p className={`${sectionSub} mb-5`}>Trajetória de crescimento multicanal</p>
+        <p style={titleStyle}>Evolução de Seguidores</p>
+        <p style={sub1Style}>Trajetória de crescimento multicanal</p>
         <ChannelChart dark={darkMode} />
       </section>
 
@@ -158,8 +173,8 @@ export default function Home({ darkMode = true, accentGradient }: PageProps) {
       </section>
 
       <section className={`rounded-2xl p-6 ${sectionBg}`}>
-        <h2 className={`${sectionTitle} mb-1`}>Roadmap Estratégico</h2>
-        <p className={`${sectionSub} mb-5`}>Linha do tempo de execução 2026</p>
+        <p style={titleStyle}>Roadmap Estratégico</p>
+        <p style={sub1Style}>Linha do tempo de execução 2026</p>
         <RoadmapTimeline dark={darkMode} />
       </section>
 
