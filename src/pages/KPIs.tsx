@@ -6,6 +6,7 @@ import ChannelChart from "../components/dashboard/ChannelChart"
 import OKRNightingaleChart from "../components/dashboard/OKRNightingaleChart"
 import HeroHeader from "../components/dashboard/HeroHeader"
 import { TrendingUp, Users, BarChart2, Target } from "lucide-react"
+import { useFontSettings } from "../lib/FontSettingsContext"
 
 const kpis = [
   { title: "Meta LinkedIn Seguidores", value: "+200", subtitle: "Novos seguidores em 2026", trend: "+40%", trendLabel: "do objetivo atingido" },
@@ -17,12 +18,25 @@ const kpis = [
 ]
 
 export default function KPIs({ darkMode = false, accentGradient }: PageProps) {
+  const { fontSettings } = useFontSettings()
+
   const bg = darkMode ? "min-h-screen p-6 md:p-8 space-y-8" : "min-h-screen p-6 md:p-8 space-y-8 bg-gray-50"
-  const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
-  const subClass = darkMode ? "text-white/50 text-sm" : "text-gray-500 text-sm"
   const sectionBg = darkMode ? "rounded-2xl bg-white/8 border border-white/10 p-6" : "rounded-2xl bg-white border border-gray-100 p-6 shadow-sm"
 
-  // BUG FIX: OKR items defined inside component to use darkMode for icon colors
+  const titleStyle = {
+    fontSize: `${fontSettings.titulo.size}px`,
+    textAlign: fontSettings.titulo.align as any,
+    color: darkMode ? "#ffffff" : "#111827",
+    fontWeight: 700,
+    marginBottom: "4px",
+  }
+  const subStyle = {
+    fontSize: `${fontSettings.subtitulo1.size}px`,
+    textAlign: fontSettings.subtitulo1.align as any,
+    color: darkMode ? "rgba(255,255,255,0.5)" : "#6b7280",
+    marginBottom: "20px",
+  }
+
   const okrs = [
     {
       icon: <TrendingUp size={22} className={darkMode ? 'text-blue-300' : 'text-blue-600'} />,
@@ -71,32 +85,30 @@ export default function KPIs({ darkMode = false, accentGradient }: PageProps) {
       <HeroHeader />
 
       <section>
-        <h2 className={`${titleClass} mb-1`}>Indicadores-Chave de Performance</h2>
-        <p className={`${subClass} mb-5`}>Metas e progresso do Ciclo Estratégico 2026</p>
+        <p style={titleStyle}>Indicadores-Chave de Performance</p>
+        <p style={subStyle}>Metas e progresso do Ciclo Estratégico 2026</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* BUG FIX: pass darkMode to KPICard */}
           {kpis.map((kpi, i) => <KPICard key={i} {...kpi} darkMode={darkMode} />)}
         </div>
       </section>
 
       <section>
-        <h2 className={`${titleClass} mb-1`}>OKRs — Objetivos e Resultados-Chave</h2>
-        <p className={`${subClass} mb-5`}>Progresso em relação às metas estratégicas</p>
+        <p style={titleStyle}>OKRs — Objetivos e Resultados-Chave</p>
+        <p style={subStyle}>Progresso em relação às metas estratégicas</p>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* BUG FIX: pass darkMode to OKRCard */}
           {okrs.map((okr, i) => <OKRCard key={i} {...okr} darkMode={darkMode} />)}
         </div>
       </section>
 
       <section>
-        <h2 className={`${titleClass} mb-1`}>Infográfico OKR</h2>
-        <p className={`${subClass} mb-5`}>Visualização comparativa de todos os objetivos</p>
+        <p style={titleStyle}>Infográfico OKR</p>
+        <p style={subStyle}>Visualização comparativa de todos os objetivos</p>
         <OKRNightingaleChart dark={darkMode} accentGradient={accentGradient} />
       </section>
 
       <section className={sectionBg}>
-        <h2 className={`${titleClass} mb-1`}>Crescimento por Canal</h2>
-        <p className={`${subClass} mb-5`}>Evolução de seguidores ao longo de 2026</p>
+        <p style={titleStyle}>Crescimento por Canal</p>
+        <p style={subStyle}>Evolução de seguidores ao longo de 2026</p>
         <ChannelChart dark={darkMode} />
       </section>
     </div>
