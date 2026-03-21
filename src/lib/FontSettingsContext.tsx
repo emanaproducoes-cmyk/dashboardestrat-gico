@@ -8,12 +8,14 @@ export interface FontSettings {
   titulo: { size: number; align: TextAlign }
   subtitulo1: { size: number; align: TextAlign }
   subtitulo2: { size: number; align: TextAlign }
+  avatarSize: number
 }
 
 export const DEFAULT_FONT_SETTINGS: FontSettings = {
   titulo:     { size: 32, align: "left" },
   subtitulo1: { size: 20, align: "left" },
   subtitulo2: { size: 14, align: "left" },
+  avatarSize: 64,
 }
 
 interface FontSettingsContextValue {
