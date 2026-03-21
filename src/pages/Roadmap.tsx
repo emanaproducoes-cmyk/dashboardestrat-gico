@@ -1,9 +1,10 @@
-
 import type { PageProps } from "../lib/types"
 import React from "react"
 import RoadmapTimeline from "../components/dashboard/RoadmapTimeline"
+import EditableHeroHeader from "../components/dashboard/EditableHeroHeader"
 import { useAuth } from "../lib/AuthContext"
 import { Calendar, Target } from "lucide-react"
+import { useFontSettings } from "../lib/FontSettingsContext"
 
 const ADMIN_EMAIL = "emanaproducoes@gmail.com"
 
@@ -24,28 +25,43 @@ const deliverables = [
   { q: "Q4", items: ["Autoridade consolidada no LinkedIn", "Blog com 12+ artigos publicados", "Avaliação completa de OKRs", "Planejamento 2027 iniciado"] },
 ]
 
-export default function Roadmap({ darkMode = false }: PageProps) {
+export default function Roadmap({ darkMode = false, accentGradient }: PageProps) {
   const { user } = useAuth()
+  const { fontSettings } = useFontSettings()
   const isAdmin = !!(user && user.email === ADMIN_EMAIL)
 
   const bg = "min-h-screen p-6 md:p-8 space-y-8" + (darkMode ? "" : " bg-gray-50")
-  const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
-  const subClass = darkMode ? "text-white/50 text-sm" : "text-gray-500 text-sm"
   const cardBg = darkMode ? "bg-white/10 border border-white/10 rounded-2xl p-6" : "bg-white border border-gray-100 rounded-2xl p-6 shadow-sm"
   const valClass = darkMode ? "text-white" : "text-gray-900"
   const textClass = darkMode ? "text-white/60" : "text-gray-500"
 
+  const titleStyle = {
+    fontSize: `${fontSettings.titulo.size}px`,
+    textAlign: fontSettings.titulo.align as any,
+    color: darkMode ? "#ffffff" : "#111827",
+    fontWeight: 700,
+    marginBottom: "4px",
+  }
+  const subStyle = {
+    fontSize: `${fontSettings.subtitulo1.size}px`,
+    textAlign: fontSettings.subtitulo1.align as any,
+    color: darkMode ? "rgba(255,255,255,0.5)" : "#6b7280",
+    marginBottom: "20px",
+  }
+
   return (
     <div className={bg}>
+      <EditableHeroHeader accentGradient={accentGradient} />
+
       <section className={cardBg}>
-        <h2 className={`${titleClass} mb-1`}>Roadmap Estratégico 2026</h2>
-        <p className={`${subClass} mb-6`}>Linha do tempo de execução em 4 fases</p>
+        <p style={titleStyle}>Roadmap Estratégico 2026</p>
+        <p style={subStyle}>Linha do tempo de execução em 4 fases</p>
         <RoadmapTimeline dark={darkMode} isAdmin={isAdmin} />
       </section>
 
       <section>
-        <h2 className={`${titleClass} mb-1`}>Marcos do Projeto</h2>
-        <p className={`${subClass} mb-5`}>Datas e entregas chave do ciclo 2026</p>
+        <p style={titleStyle}>Marcos do Projeto</p>
+        <p style={subStyle}>Datas e entregas chave do ciclo 2026</p>
         <div className="space-y-3">
           {milestones.map((m, i) => (
             <div key={i} className={`${cardBg} flex items-center gap-4`}>
@@ -65,8 +81,8 @@ export default function Roadmap({ darkMode = false }: PageProps) {
       </section>
 
       <section>
-        <h2 className={`${titleClass} mb-1`}>Entregáveis por Trimestre</h2>
-        <p className={`${subClass} mb-5`}>O que esperamos produzir em cada fase</p>
+        <p style={titleStyle}>Entregáveis por Trimestre</p>
+        <p style={subStyle}>O que esperamos produzir em cada fase</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {deliverables.map((d, i) => (
             <div key={i} className={cardBg}>
