@@ -3,6 +3,7 @@ import React from "react"
 import HeroHeader from "../components/dashboard/HeroHeader"
 import ClientJourney from "../components/dashboard/ClientJourney"
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
+import { useFontSettings } from "../lib/FontSettingsContext"
 
 const funnelData = [
   { stage: "Awareness", count: 1200, color: "#3b82f6", pct: 100 },
@@ -29,35 +30,44 @@ const automationSteps = [
 ]
 
 export default function Funil({ darkMode = false }: PageProps) {
+  const { fontSettings } = useFontSettings()
+
   const bg = "min-h-screen p-6 md:p-8 space-y-8" + (darkMode ? "" : " bg-gray-50")
-  const titleClass = darkMode ? "text-white font-bold text-xl" : "text-gray-900 font-bold text-xl"
-  const subClass = darkMode ? "text-white/50 text-sm" : "text-gray-500 text-sm"
   const cardBg = darkMode ? "bg-white/10 border border-white/10 rounded-2xl p-6" : "bg-white border border-gray-100 rounded-2xl p-6 shadow-sm"
   const textClass = darkMode ? "text-white/70" : "text-gray-600"
-  const rowBg = darkMode ? "bg-white/5 rounded-xl" : "bg-gray-50 rounded-xl"
   const labelClass = darkMode ? "text-white/40" : "text-gray-400"
   const valClass = darkMode ? "text-white" : "text-gray-900"
+
+  const titleStyle = {
+    fontSize: `${fontSettings.titulo.size}px`,
+    textAlign: fontSettings.titulo.align as any,
+    color: darkMode ? "#ffffff" : "#111827",
+    fontWeight: 700,
+    marginBottom: "4px",
+  }
+  const subStyle = {
+    fontSize: `${fontSettings.subtitulo1.size}px`,
+    textAlign: fontSettings.subtitulo1.align as any,
+    color: darkMode ? "rgba(255,255,255,0.5)" : "#6b7280",
+    marginBottom: "20px",
+  }
 
   return (
     <div className={bg}>
       <HeroHeader />
 
-      {/* Client Journey Gamification */}
       <section className={cardBg}>
         <ClientJourney dark={darkMode} />
       </section>
 
-      {/* Conversion Funnel */}
       <section>
-        <h2 className={`${titleClass} mb-1`}>Funil de Conversão</h2>
-        <p className={`${subClass} mb-5`}>Do awareness à conversão — visão do funil completo</p>
+        <p style={titleStyle}>Funil de Conversão</p>
+        <p style={subStyle}>Do awareness à conversão — visão do funil completo</p>
         <div className="space-y-3">
           {funnelData.map((stage, i) => (
             <div key={i} className={`${cardBg} flex items-center gap-4`}>
-              <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center font-extrabold text-white flex-shrink-0 text-sm"
-                style={{ backgroundColor: stage.color }}
-              >
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center font-extrabold text-white flex-shrink-0 text-sm"
+                style={{ backgroundColor: stage.color }}>
                 {i + 1}
               </div>
               <div className="flex-1 min-w-0">
@@ -77,10 +87,9 @@ export default function Funil({ darkMode = false }: PageProps) {
         </div>
       </section>
 
-      {/* Conversion by channel */}
       <section className={cardBg}>
-        <h2 className={`${titleClass} mb-1`}>Conversões por Canal</h2>
-        <p className={`${subClass} mb-5`}>Leads e conversões por origem em 2026</p>
+        <p style={titleStyle}>Conversões por Canal</p>
+        <p style={subStyle}>Leads e conversões por origem em 2026</p>
         <ResponsiveContainer width="100%" height={240}>
           <BarChart data={conversionByChannel}>
             <XAxis dataKey="canal" tick={{ fontSize: 11, fill: darkMode ? 'rgba(255,255,255,0.4)' : '#94a3b8' }} axisLine={false} tickLine={false} />
@@ -96,10 +105,9 @@ export default function Funil({ darkMode = false }: PageProps) {
         </ResponsiveContainer>
       </section>
 
-      {/* Automation steps */}
       <section>
-        <h2 className={`${titleClass} mb-1`}>Automação de Relacionamento</h2>
-        <p className={`${subClass} mb-5`}>Gatilhos e ações automáticas em cada etapa da jornada</p>
+        <p style={titleStyle}>Automação de Relacionamento</p>
+        <p style={subStyle}>Gatilhos e ações automáticas em cada etapa da jornada</p>
         <div className="space-y-3">
           {automationSteps.map((step, i) => (
             <div key={i} className={`${cardBg} flex items-start gap-4`}>
