@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './lib/AuthContext'
 import { FontSettingsProvider } from './lib/FontSettingsContext'
 import { UserPhotoProvider } from './lib/UserPhotoContext'
+import { PlanningDataProvider } from './lib/PlanningDataContext'
 import LoginPage from './pages/LoginPage'
 import Layout from './Layout'
 import Home from './pages/Home'
@@ -69,7 +70,9 @@ export default function App() {
         <AuthProvider>
           <FontSettingsProvider>
             <UserPhotoProvider>
-              <AppRoutes />
+              <PlanningDataProvider>
+                <AppRoutes />
+              </PlanningDataProvider>
             </UserPhotoProvider>
           </FontSettingsProvider>
         </AuthProvider>
