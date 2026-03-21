@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react"
 import {
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
-  Save, RotateCcw, Eye, Type, Shield, Lock
+  Save, RotateCcw, Eye, Type, Shield, Lock, Circle
 } from "lucide-react"
 import { useFontSettings, DEFAULT_FONT_SETTINGS, FontSettings, TextAlign } from "../lib/FontSettingsContext"
 import { useAuth } from "../lib/AuthContext"
@@ -64,7 +64,7 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
   const trackBg = darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
   const previewBg = darkMode ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.03)"
 
-  const updateLevel = (key: keyof FontSettings, field: "size" | "align", value: number | TextAlign) => {
+  const updateLevel = (key: keyof Omit<FontSettings, 'avatarSize'>, field: "size" | "align", value: number | TextAlign) => {
     setDraft(prev => ({ ...prev, [key]: { ...prev[key], [field]: value } }))
   }
 
@@ -107,14 +107,74 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
         </div>
         <h1 className={`text-3xl font-extrabold ${textPrimary}`}>Configurações</h1>
         <p className={`text-sm mt-1 ${textSecondary}`}>
-          Ajuste tipografia e alinhamento — as alterações refletem para todos os usuários em tempo real.
+          Ajuste tipografia, alinhamento e avatar — as alterações refletem para todos os usuários em tempo real.
         </p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Controles */}
         <div className="space-y-4">
+
+          {/* Avatar size */}
           <div className="flex items-center gap-2 mb-2">
+            <Circle size={16} className={textSecondary} />
+            <span className={`text-sm font-semibold ${textPrimary}`}>Avatar do Header</span>
+          </div>
+          <div className="rounded-2xl p-5" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full" style={{ background: accent.css }} />
+                  <span className={`text-sm font-bold ${textPrimary}`}>Tamanho do círculo</span>
+                </div>
+                <p className={`text-xs mt-0.5 ml-4 ${textSecondary}`}>Foto de perfil no header de todas as páginas</p>
+              </div>
+              <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg"
+                style={{ background: accent.css + "20", color: accentGradient?.from || "#3b82f6" }}>
+                {draft.avatarSize}px
+              </span>
+            </div>
+            <div className="flex items-center gap-4">
+              {/* Preview do avatar */}
+              <div
+                className="rounded-full bg-white/20 flex items-center justify-center ring-2 ring-white/30 flex-shrink-0 text-white font-black transition-all duration-200"
+                style={{
+                  width: `${draft.avatarSize}px`,
+                  height: `${draft.avatarSize}px`,
+                  background: accent.css,
+                  fontSize: `${draft.avatarSize * 0.3}px`,
+                }}
+              >
+                AF
+              </div>
+              <div className="flex-1">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className={`text-[10px] uppercase tracking-wider ${textSecondary}`}>Tamanho</span>
+                  <span className={`text-[10px] ${textSecondary}`}>32px — 120px</span>
+                </div>
+                <div className="relative h-5 flex items-center">
+                  <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: trackBg }}>
+                    <div className="h-full rounded-full transition-all duration-150"
+                      style={{
+                        width: `${((draft.avatarSize - 32) / (120 - 32)) * 100}%`,
+                        background: accent.css,
+                      }} />
+                  </div>
+                  <input type="range" min={32} max={120} value={draft.avatarSize}
+                    onChange={e => setDraft(prev => ({ ...prev, avatarSize: Number(e.target.value) }))}
+                    className="absolute inset-0 w-full opacity-0 cursor-pointer" />
+                  <div className="absolute w-4 h-4 rounded-full shadow-lg border-2 border-white pointer-events-none transition-all duration-150"
+                    style={{
+                      left: `calc(${((draft.avatarSize - 32) / (120 - 32)) * 100}% - 8px)`,
+                      background: accent.css,
+                    }} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tipografia */}
+          <div className="flex items-center gap-2 mt-4 mb-2">
             <Type size={16} className={textSecondary} />
             <span className={`text-sm font-semibold ${textPrimary}`}>Tipografia</span>
           </div>
@@ -141,9 +201,7 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
                 <div className="mb-4">
                   <div className="flex items-center justify-between mb-1.5">
                     <span className={`text-[10px] uppercase tracking-wider ${textSecondary}`}>Tamanho</span>
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] ${textSecondary}`}>{meta.minSize}px — {meta.maxSize}px</span>
-                    </div>
+                    <span className={`text-[10px] ${textSecondary}`}>{meta.minSize}px — {meta.maxSize}px</span>
                   </div>
                   <div className="relative h-5 flex items-center">
                     <div className="w-full h-1.5 rounded-full overflow-hidden" style={{ background: trackBg }}>
@@ -215,6 +273,34 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
 
           <div className="rounded-2xl p-6 sticky top-6" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
             <div className="space-y-6">
+
+              {/* Preview avatar */}
+              <div>
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ background: accent.css }} />
+                  <span className={`text-[9px] uppercase tracking-widest font-semibold ${textSecondary}`}>
+                    Avatar — {draft.avatarSize}px
+                  </span>
+                </div>
+                <div className="rounded-xl p-4 flex items-center gap-4" style={{ background: previewBg, border: `1px solid ${cardBorder}` }}>
+                  <div
+                    className="rounded-full flex items-center justify-center text-white font-black flex-shrink-0 ring-2 ring-white/30 transition-all duration-200"
+                    style={{
+                      width: `${draft.avatarSize}px`,
+                      height: `${draft.avatarSize}px`,
+                      background: accent.css,
+                      fontSize: `${draft.avatarSize * 0.3}px`,
+                    }}
+                  >
+                    AF
+                  </div>
+                  <div>
+                    <p className={`font-bold text-sm ${textPrimary}`}>AF Consultoria</p>
+                    <p className={`text-xs ${textSecondary}`}>Header do dashboard</p>
+                  </div>
+                </div>
+              </div>
+
               {LEVEL_META.map((meta) => {
                 const level = draft[meta.key]
                 return (
@@ -236,6 +322,7 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
                 )
               })}
 
+              {/* Simulação completa */}
               <div>
                 <div className="flex items-center gap-1.5 mb-2">
                   <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
@@ -243,20 +330,36 @@ export default function Configuracoes({ darkMode = true, accentGradient }: PageP
                 </div>
                 <div className="rounded-xl p-5 transition-all duration-200"
                   style={{ background: previewBg, border: `1px solid ${cardBorder}` }}>
-                  <p className={`font-extrabold leading-tight transition-all duration-200 ${textPrimary}`}
-                    style={{ fontSize: `${draft.titulo.size}px`, textAlign: draft.titulo.align }}>
-                    AF Consultoria & Projetos
-                  </p>
-                  <p className="font-semibold mt-1 transition-all duration-200"
-                    style={{ fontSize: `${draft.subtitulo1.size}px`, textAlign: draft.subtitulo1.align, color: accentGradient?.from || "#3b82f6" }}>
-                    Centro de Inteligência de Marketing Estratégico 2026
-                  </p>
-                  <p className={`mt-2 transition-all duration-200 ${textSecondary}`}
+                  <div className="flex items-center gap-3 mb-3">
+                    <div
+                      className="rounded-full flex items-center justify-center text-white font-black flex-shrink-0 transition-all duration-200"
+                      style={{
+                        width: `${draft.avatarSize}px`,
+                        height: `${draft.avatarSize}px`,
+                        background: accent.css,
+                        fontSize: `${draft.avatarSize * 0.3}px`,
+                      }}
+                    >
+                      AF
+                    </div>
+                    <div>
+                      <p className={`font-extrabold leading-tight transition-all duration-200 ${textPrimary}`}
+                        style={{ fontSize: `${draft.titulo.size}px`, textAlign: draft.titulo.align }}>
+                        AF Consultoria & Projetos
+                      </p>
+                      <p className="font-semibold mt-0.5 transition-all duration-200"
+                        style={{ fontSize: `${draft.subtitulo1.size}px`, textAlign: draft.subtitulo1.align, color: accentGradient?.from || "#3b82f6" }}>
+                        Centro de Inteligência de Marketing Estratégico 2026
+                      </p>
+                    </div>
+                  </div>
+                  <p className={`mt-1 transition-all duration-200 ${textSecondary}`}
                     style={{ fontSize: `${draft.subtitulo2.size}px`, textAlign: draft.subtitulo2.align }}>
                     Análise em tempo real e insights estratégicos para decisões de marketing baseadas em dados.
                   </p>
                 </div>
               </div>
+
             </div>
           </div>
         </div>
