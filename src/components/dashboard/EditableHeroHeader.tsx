@@ -5,6 +5,7 @@ import { useAuth } from "../../lib/AuthContext"
 import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import HeaderMiniCharts from "./HeaderMiniCharts"
 import { useFontSettings } from "../../lib/FontSettingsContext"
+import { useUserPhoto } from "../../lib/UserPhotoContext"
 
 interface EditableFieldProps {
   value: string
@@ -100,10 +101,10 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const { user } = useAuth()
   const isAdmin = user?.isAdmin ?? false
   const { fontSettings } = useFontSettings()
+  const { photo, savePhoto } = useUserPhoto()
 
   const load = (key: string, def: string) => getGlobalItem(key) || def
 
-  const [photo, setPhoto] = useState<string | null>(() => getGlobalItem('hero_photo'))
   const [companyName, setCompanyName] = useState(() => load('hero_companyName', DEFAULTS.companyName))
   const [tagline, setTagline] = useState(() => load('hero_tagline', DEFAULTS.tagline))
   const [subtitle, setSubtitle] = useState(() => load('hero_subtitle', DEFAULTS.subtitle))
@@ -125,14 +126,12 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const date = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!isAdmin) return
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
       if (ev.target?.result && typeof ev.target.result === "string") {
-        setPhoto(ev.target.result)
-        setGlobalItem('hero_photo', ev.target.result)
+        savePhoto(ev.target.result)
       }
     }
     reader.readAsDataURL(file)
@@ -143,6 +142,8 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
     setStats(next)
     setGlobalItem('hero_stats', JSON.stringify(next))
   }
+
+  const avatarSize = fontSettings.avatarSize || 64
 
   return (
     <div className="relative overflow-hidden rounded-2xl p-8 text-white" style={{ background: gradientCss }}>
@@ -162,20 +163,19 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
       <div className="relative flex items-start justify-between gap-4 mt-4">
         <div className="flex items-center gap-4 min-w-0">
           <div
-            className={`w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 relative group overflow-hidden flex-shrink-0 ${isAdmin ? "cursor-pointer" : "cursor-default"}`}
-            onClick={() => isAdmin && fileRef.current?.click()}
+            className="rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center ring-4 ring-white/30 relative group overflow-hidden flex-shrink-0 cursor-pointer transition-all duration-200"
+            style={{ width: `${avatarSize}px`, height: `${avatarSize}px` }}
+            onClick={() => fileRef.current?.click()}
           >
             {photo
-              ? <img src={photo} alt="AF" className="w-full h-full object-cover rounded-full" />
-              : <span className="text-xl font-black">AF</span>
+              ? <img src={photo} alt="avatar" className="w-full h-full object-cover rounded-full" />
+              : <span className="font-black text-white" style={{ fontSize: `${avatarSize * 0.3}px` }}>AF</span>
             }
-            {isAdmin && (
-              <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <Camera size={14} className="text-white" />
-              </div>
-            )}
+            <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+              <Camera size={14} className="text-white" />
+            </div>
           </div>
-          {isAdmin && <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />}
+          <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhoto} />
 
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 mb-0.5">
@@ -192,10 +192,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
                 value={companyName}
                 onChange={v => { setCompanyName(v); save('hero_companyName', v) }}
                 className="font-extrabold text-white"
-                style={{
-                  fontSize: `${fontSettings.titulo.size}px`,
-                  textAlign: fontSettings.titulo.align,
-                }}
+                style={{ fontSize: `${fontSettings.titulo.size}px`, textAlign: fontSettings.titulo.align }}
                 isAdmin={isAdmin}
               />
             </h1>
@@ -204,10 +201,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
                 value={subtitle}
                 onChange={v => { setSubtitle(v); save('hero_subtitle', v) }}
                 className="text-blue-100/80"
-                style={{
-                  fontSize: `${fontSettings.subtitulo1.size}px`,
-                  textAlign: fontSettings.subtitulo1.align,
-                }}
+                style={{ fontSize: `${fontSettings.subtitulo1.size}px`, textAlign: fontSettings.subtitulo1.align }}
                 isAdmin={isAdmin}
               />
             </p>
@@ -216,10 +210,7 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
                 value={description}
                 onChange={v => { setDescription(v); save('hero_description', v) }}
                 className="text-blue-200/60 leading-relaxed"
-                style={{
-                  fontSize: `${fontSettings.subtitulo2.size}px`,
-                  textAlign: fontSettings.subtitulo2.align,
-                }}
+                style={{ fontSize: `${fontSettings.subtitulo2.size}px`, textAlign: fontSettings.subtitulo2.align }}
                 multiline
                 isAdmin={isAdmin}
               />
