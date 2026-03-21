@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import {
   LayoutDashboard, TrendingUp, Radio, FileText,
   Filter as FilterIcon, Award, Map, Lightbulb,
-  ChevronLeft, ChevronRight, Sun, Moon, LogOut, Shield, Settings
+  ChevronLeft, ChevronRight, Sun, Moon, LogOut, Shield, Settings, Code2
 } from "lucide-react"
 import GlobalColorPicker, { DEFAULT_GRADIENT } from "./components/dashboard/GlobalColorPicker"
 import type { GradientOption, PageProps } from "./lib/types"
@@ -107,6 +107,7 @@ export default function Layout({ children }: LayoutProps) {
                 </div>
               )}
               {collapsed && <div className="h-px mx-2 my-2" style={{ background: sidebarBorder }} />}
+
               <button
                 onClick={() => navigate("/Configuracoes")}
                 className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
@@ -116,6 +117,19 @@ export default function Layout({ children }: LayoutProps) {
                 <Settings size={18} className={location.pathname === "/Configuracoes" ? navActiveIcon : ''} />
                 {!collapsed && <span>Configurações</span>}
                 {location.pathname === "/Configuracoes" && !collapsed && (
+                  <span className={`ml-auto w-2 h-2 rounded-full ${dotActive}`} />
+                )}
+              </button>
+
+              <button
+                onClick={() => navigate("/DevMode")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  location.pathname === "/DevMode" ? navActive : navInactive
+                }`}
+              >
+                <Code2 size={18} className={location.pathname === "/DevMode" ? navActiveIcon : ''} />
+                {!collapsed && <span>Dev Mode</span>}
+                {location.pathname === "/DevMode" && !collapsed && (
                   <span className={`ml-auto w-2 h-2 rounded-full ${dotActive}`} />
                 )}
               </button>
