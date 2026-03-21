@@ -2,6 +2,7 @@ import React from 'react'
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider, useAuth } from './lib/AuthContext'
+import { FontSettingsProvider } from './lib/FontSettingsContext'
 import LoginPage from './pages/LoginPage'
 import Layout from './Layout'
 import Home from './pages/Home'
@@ -12,6 +13,7 @@ import Insights from './pages/Insights'
 import KPIs from './pages/KPIs'
 import ProvaSocial from './pages/ProvaSocial'
 import Roadmap from './pages/Roadmap'
+import Configuracoes from './pages/Configuracoes'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -53,6 +55,7 @@ function AppRoutes() {
       <Route path="/KPIs" element={<Layout currentPageName="KPIs"><KPIs /></Layout>} />
       <Route path="/ProvaSocial" element={<Layout currentPageName="ProvaSocial"><ProvaSocial /></Layout>} />
       <Route path="/Roadmap" element={<Layout currentPageName="Roadmap"><Roadmap /></Layout>} />
+      <Route path="/Configuracoes" element={<Layout currentPageName="Configuracoes"><Configuracoes /></Layout>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   )
@@ -63,7 +66,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <AuthProvider>
-          <AppRoutes />
+          <FontSettingsProvider>
+            <AppRoutes />
+          </FontSettingsProvider>
         </AuthProvider>
       </Router>
     </QueryClientProvider>
