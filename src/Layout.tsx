@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from "react-router-dom"
 import {
   LayoutDashboard, TrendingUp, Radio, FileText,
   Filter as FilterIcon, Award, Map, Lightbulb,
-  ChevronLeft, ChevronRight, Sun, Moon, LogOut, Shield
+  ChevronLeft, ChevronRight, Sun, Moon, LogOut, Shield, Settings
 } from "lucide-react"
 import GlobalColorPicker, { DEFAULT_GRADIENT } from "./components/dashboard/GlobalColorPicker"
 import type { GradientOption, PageProps } from "./lib/types"
@@ -69,7 +69,6 @@ export default function Layout({ children }: LayoutProps) {
         className={`${collapsed ? 'w-16' : 'w-56'} transition-all duration-300 flex flex-col flex-shrink-0 z-20`}
         style={{ background: sidebarBg, backdropFilter: "blur(16px)", borderRight: `1px solid ${sidebarBorder}` }}
       >
-        {/* Logo */}
         <div className="flex items-center justify-between px-4 h-16" style={{ borderBottom: `1px solid ${sidebarBorder}` }}>
           {!collapsed && (
             <span className={`text-lg font-bold ${logoColor}`}>
@@ -81,7 +80,6 @@ export default function Layout({ children }: LayoutProps) {
           </button>
         </div>
 
-        {/* Nav */}
         <nav className="flex-1 py-3 px-2 space-y-0.5 overflow-y-auto">
           {navItems.map((item) => {
             const isActive = location.pathname === item.path
@@ -100,22 +98,39 @@ export default function Layout({ children }: LayoutProps) {
               </button>
             )
           })}
+
+          {isAdmin && (
+            <>
+              {!collapsed && (
+                <div className="px-3 pt-3 pb-1">
+                  <div className="h-px" style={{ background: sidebarBorder }} />
+                  <p className={`text-[9px] uppercase tracking-widest font-semibold mt-2 ${brandText1}`}>Admin</p>
+                </div>
+              )}
+              {collapsed && <div className="h-px mx-2 my-2" style={{ background: sidebarBorder }} />}
+              <button
+                onClick={() => navigate("/Configuracoes")}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  location.pathname === "/Configuracoes" ? navActive : navInactive
+                }`}
+              >
+                <Settings size={18} className={location.pathname === "/Configuracoes" ? navActiveIcon : ''} />
+                {!collapsed && <span>Configurações</span>}
+                {!collapsed && <Shield size={10} className="ml-auto text-blue-400 flex-shrink-0" />}
+              </button>
+            </>
+          )}
         </nav>
 
-        {/* Theme controls */}
         <div className="px-2 pb-2 space-y-1">
-          <button
-            onClick={() => setShowPicker(!showPicker)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${themeBtn}`}
-          >
+          <button onClick={() => setShowPicker(!showPicker)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${themeBtn}`}>
             <div className="w-4 h-4 rounded-full flex-shrink-0" style={{ background: accentGradient.css }} />
             {!collapsed && <span>Cores Globais</span>}
             {!collapsed && <div className="ml-auto w-4 h-4 rounded-full" style={{ background: accentGradient.css }} />}
           </button>
-          <button
-            onClick={() => setDark(!dark)}
-            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${themeBtn}`}
-          >
+          <button onClick={() => setDark(!dark)}
+            className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 ${themeBtn}`}>
             {dark ? <Sun size={18} /> : <Moon size={18} />}
             {!collapsed && <span>{dark ? 'Modo Claro' : 'Modo Escuro'}</span>}
           </button>
@@ -130,17 +145,11 @@ export default function Layout({ children }: LayoutProps) {
           />
         )}
 
-        {/* User card — rodapé da sidebar */}
-        <div
-          className="px-3 py-3 cursor-pointer"
-          style={{ borderTop: `1px solid ${sidebarBorder}` }}
-          onClick={() => setShowUserMenu(!showUserMenu)}
-        >
+        <div className="px-3 py-3 cursor-pointer" style={{ borderTop: `1px solid ${sidebarBorder}` }}
+          onClick={() => setShowUserMenu(!showUserMenu)}>
           {showUserMenu && !collapsed && (
-            <div
-              className="mb-2 rounded-xl overflow-hidden"
-              style={{ background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", border: `1px solid ${sidebarBorder}` }}
-            >
+            <div className="mb-2 rounded-xl overflow-hidden"
+              style={{ background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)", border: `1px solid ${sidebarBorder}` }}>
               <div className="px-3 py-2">
                 <p className={`text-[10px] truncate ${brandText1}`}>{user?.email}</p>
                 {isAdmin && (
@@ -150,10 +159,8 @@ export default function Layout({ children }: LayoutProps) {
                   </div>
                 )}
               </div>
-              <button
-                onClick={(e) => { e.stopPropagation(); logout() }}
-                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${dark ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}
-              >
+              <button onClick={(e) => { e.stopPropagation(); logout() }}
+                className={`w-full flex items-center gap-2 px-3 py-2 text-xs font-medium transition-colors ${dark ? 'text-red-400 hover:bg-red-500/10' : 'text-red-600 hover:bg-red-50'}`}>
                 <LogOut size={13} />
                 Sair da conta
               </button>
@@ -164,10 +171,8 @@ export default function Layout({ children }: LayoutProps) {
             {user?.avatar
               ? <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full object-cover flex-shrink-0 ring-2 ring-white/20" />
               : (
-                <div
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
-                  style={{ background: isAdmin ? "linear-gradient(135deg, #3B6AF5, #7B35EF)" : "linear-gradient(135deg, #374151, #6B7280)" }}
-                >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                  style={{ background: isAdmin ? "linear-gradient(135deg, #3B6AF5, #7B35EF)" : "linear-gradient(135deg, #374151, #6B7280)" }}>
                   {initials}
                 </div>
               )
