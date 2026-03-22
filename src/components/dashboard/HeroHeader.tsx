@@ -6,6 +6,7 @@ import { useFontSettings } from "../../lib/FontSettingsContext"
 import { useUserPhoto } from "../../lib/UserPhotoContext"
 import { useAuth } from "../../lib/AuthContext"
 import { getGlobalItem, setGlobalItem } from "../../lib/auth"
+import { usePlanningData } from "../../lib/PlanningDataContext"
 
 interface EditableFieldProps {
   value: string
@@ -101,20 +102,49 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
   const { fontSettings } = useFontSettings()
   const { photo, savePhoto } = useUserPhoto()
   const { user } = useAuth()
+  const { data: planningData } = usePlanningData()
   const isAdmin = user?.isAdmin ?? false
 
   const load = (key: string, def: string) => getGlobalItem(key) || def
 
-  const [companyName, setCompanyName] = useState(() => load('hero_companyName', DEFAULTS.companyName))
-  const [tagline, setTagline] = useState(() => load('hero_tagline', DEFAULTS.tagline))
-  const [subtitle, setSubtitle] = useState(() => load('hero_subtitle', DEFAULTS.subtitle))
-  const [description, setDescription] = useState(() => load('hero_description', DEFAULTS.description))
+  const [companyName, setCompanyName] = useState(() =>
+    getGlobalItem('hero_companyName') || planningData.empresa.nome || DEFAULTS.companyName
+  )
+  const [tagline, setTagline] = useState(() =>
+    getGlobalItem('hero_tagline') || planningData.empresa.segmento || DEFAULTS.tagline
+  )
+  const [subtitle, setSubtitle] = useState(() =>
+    getGlobalItem('hero_subtitle') || planningData.missaoVisao.missao?.slice(0, 80) || DEFAULTS.subtitle
+  )
+  const [description, setDescription] = useState(() =>
+    getGlobalItem('hero_description') || planningData.missaoVisao.visao || DEFAULTS.description
+  )
   const [stats, setStats] = useState<StatItem[]>(() => {
     const saved = getGlobalItem('hero_stats')
-    return saved ? JSON.parse(saved) : DEFAULTS.stats
+    if (saved) return JSON.parse(saved)
+    if (planningData.kpis.length > 0) {
+      return planningData.kpis.slice(0, 4).map(k => ({
+        value: k.meta || "—",
+        label: k.indicador || k.perspectiva
+      }))
+    }
+    return DEFAULTS.stats
   })
   const [now, setNow] = useState(new Date())
   const fileRef = useRef<HTMLInputElement>(null)
+
+  // Sync with planningData changes
+  useEffect(() => {
+    if (!getGlobalItem('hero_companyName') && planningData.empresa.nome) {
+      setCompanyName(planningData.empresa.nome)
+    }
+  }, [planningData.empresa.nome])
+
+  useEffect(() => {
+    if (!getGlobalItem('hero_subtitle') && planningData.missaoVisao.missao) {
+      setSubtitle(planningData.missaoVisao.missao.slice(0, 80))
+    }
+  }, [planningData.missaoVisao.missao])
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60000)
@@ -130,9 +160,7 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      if (ev.target?.result && typeof ev.target.result === 'string') {
-        savePhoto(ev.target.result)
-      }
+      if (ev.target?.result && typeof ev.target.result === 'string') savePhoto(ev.target.result)
     }
     reader.readAsDataURL(file)
   }
@@ -169,7 +197,9 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
           >
             {photo
               ? <img src={photo} alt="avatar" className="w-full h-full object-cover rounded-full" />
-              : <span className="font-black text-white" style={{ fontSize: `${avatarSize * 0.3}px` }}>AF</span>
+              : <span className="font-black text-white" style={{ fontSize: `${avatarSize * 0.3}px` }}>
+                  {planningData.empresa.nome?.slice(0, 2).toUpperCase() || "AF"}
+                </span>
             }
             <div className="absolute inset-0 bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
               <Camera size={14} className="text-white" />
