@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw } from "lucide-react"
+import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw, Radio } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { usePlanningData } from "../lib/PlanningDataContext"
 import type { GradientOption } from "../lib/types"
@@ -13,6 +13,7 @@ import DevOrcamento from "../components/devmode/DevOrcamento"
 import DevRiscos from "../components/devmode/DevRiscos"
 import DevEquipe from "../components/devmode/DevEquipe"
 import DevAcompanhamento from "../components/devmode/DevAcompanhamento"
+import DevCanais from "../components/devmode/DevCanais"
 
 interface PageProps {
   darkMode?: boolean
@@ -20,16 +21,17 @@ interface PageProps {
 }
 
 const TABS = [
-  { id: "empresa",        label: "Empresa",       icon: Building2 },
-  { id: "missao",         label: "Missão & Visão", icon: Target },
-  { id: "swot",           label: "SWOT",           icon: BarChart3 },
-  { id: "okrs",           label: "OKRs",           icon: TrendingUp },
-  { id: "kpis",           label: "KPIs",           icon: BarChart3 },
-  { id: "acoes",          label: "Plano de Ação",  icon: ListChecks },
-  { id: "orcamento",      label: "Orçamento",      icon: DollarSign },
-  { id: "riscos",         label: "Riscos",         icon: AlertTriangle },
-  { id: "equipe",         label: "Equipe",         icon: Users },
-  { id: "acompanhamento", label: "Acomp.",         icon: RefreshCw },
+  { id: "empresa",        label: "Empresa",        icon: Building2 },
+  { id: "missao",         label: "Missão & Visão",  icon: Target },
+  { id: "swot",           label: "SWOT",            icon: BarChart3 },
+  { id: "okrs",           label: "OKRs",            icon: TrendingUp },
+  { id: "kpis",           label: "KPIs",            icon: BarChart3 },
+  { id: "acoes",          label: "Plano de Ação",   icon: ListChecks },
+  { id: "orcamento",      label: "Orçamento",       icon: DollarSign },
+  { id: "riscos",         label: "Riscos",          icon: AlertTriangle },
+  { id: "equipe",         label: "Equipe",          icon: Users },
+  { id: "acompanhamento", label: "Acomp.",          icon: RefreshCw },
+  { id: "canais",         label: "Canais",          icon: Radio },
 ]
 
 export default function DevMode({ darkMode = true, accentGradient }: PageProps) {
@@ -67,8 +69,6 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
     )
   }
 
-  const activeTabData = TABS.find(t => t.id === activeTab)
-
   return (
     <div className="min-h-screen p-6 md:p-8">
       {/* Header */}
@@ -87,12 +87,13 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
           <h1 className={`text-3xl font-extrabold ${textPrimary}`}>Dev Mode</h1>
         </div>
         <p className={`text-sm mt-1 ${textSecondary}`}>
-          Gerencie todos os dados do planejamento estratégico — edite, adicione e salve para todos os usuários.
+          Gerencie todos os dados do app — edite, adicione e salve para todos os usuários em tempo real.
         </p>
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 flex-wrap mb-6 p-1 rounded-xl" style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
+      <div className="flex gap-1 flex-wrap mb-6 p-1 rounded-xl"
+        style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
         {TABS.map(tab => {
           const Icon = tab.icon
           const isActive = activeTab === tab.id
@@ -125,6 +126,7 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
         {activeTab === "riscos"         && <DevRiscos         darkMode={darkMode} accentGradient={accentGradient} />}
         {activeTab === "equipe"         && <DevEquipe         darkMode={darkMode} accentGradient={accentGradient} />}
         {activeTab === "acompanhamento" && <DevAcompanhamento darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "canais"         && <DevCanais         darkMode={darkMode} accentGradient={accentGradient} />}
       </div>
     </div>
   )
