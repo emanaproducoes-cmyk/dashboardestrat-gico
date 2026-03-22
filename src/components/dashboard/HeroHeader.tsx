@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Sparkles, Clock, Pencil, Check, Camera, Shield } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
+import { useAuth } from "../../lib/AuthContext"
+import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import HeaderMiniCharts from "./HeaderMiniCharts"
 import { useFontSettings } from "../../lib/FontSettingsContext"
 import { useUserPhoto } from "../../lib/UserPhotoContext"
-import { useAuth } from "../../lib/AuthContext"
-import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import { usePlanningData } from "../../lib/PlanningDataContext"
 
 interface EditableFieldProps {
@@ -17,7 +17,7 @@ interface EditableFieldProps {
   isAdmin: boolean
 }
 
-function EditableField({ value, onChange, className = '', style, multiline, isAdmin }: EditableFieldProps) {
+function EditableField({ value, onChange, className = "", style, multiline, isAdmin }: EditableFieldProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
@@ -30,7 +30,7 @@ function EditableField({ value, onChange, className = '', style, multiline, isAd
       autoFocus: true,
       value: draft,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !multiline) save() },
+      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" && !multiline) save() },
       className: `bg-white/20 border border-white/40 rounded px-2 py-1 text-white outline-none min-w-[120px] ${className}`,
       style,
     }
@@ -97,15 +97,13 @@ const DEFAULTS = {
   ]
 }
 
-export default function HeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
-  const gradientCss = accentGradient?.css || 'linear-gradient(135deg, #3B6AF5, #7B35EF)'
+export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
+  const gradientCss = accentGradient?.css || "linear-gradient(135deg, #3B6AF5, #7B35EF)"
+  const { user } = useAuth()
+  const isAdmin = user?.isAdmin ?? false
   const { fontSettings } = useFontSettings()
   const { photo, savePhoto } = useUserPhoto()
-  const { user } = useAuth()
   const { data: planningData } = usePlanningData()
-  const isAdmin = user?.isAdmin ?? false
-
-  const load = (key: string, def: string) => getGlobalItem(key) || def
 
   const [companyName, setCompanyName] = useState(() =>
     getGlobalItem('hero_companyName') || planningData.empresa.nome || DEFAULTS.companyName
@@ -122,10 +120,10 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
   const [stats, setStats] = useState<StatItem[]>(() => {
     const saved = getGlobalItem('hero_stats')
     if (saved) return JSON.parse(saved)
-    if (planningData.kpis.length > 0) {
-      return planningData.kpis.slice(0, 4).map(k => ({
+    if (planningData.kpis.filter(k => k.indicador).length > 0) {
+      return planningData.kpis.filter(k => k.indicador).slice(0, 4).map(k => ({
         value: k.meta || "—",
-        label: k.indicador || k.perspectiva
+        label: k.indicador
       }))
     }
     return DEFAULTS.stats
@@ -133,7 +131,6 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
   const [now, setNow] = useState(new Date())
   const fileRef = useRef<HTMLInputElement>(null)
 
-  // Sync with planningData changes
   useEffect(() => {
     if (!getGlobalItem('hero_companyName') && planningData.empresa.nome) {
       setCompanyName(planningData.empresa.nome)
@@ -152,15 +149,15 @@ export default function HeroHeader({ accentGradient }: { accentGradient?: Gradie
   }, [])
 
   const save = (key: string, value: string) => { if (isAdmin) setGlobalItem(key, value) }
-  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-  const date = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
+  const date = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      if (ev.target?.result && typeof ev.target.result === 'string') savePhoto(ev.target.result)
+      if (ev.target?.result && typeof ev.target.result === "string") savePhoto(ev.target.result)
     }
     reader.readAsDataURL(file)
   }
