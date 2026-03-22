@@ -16,6 +16,7 @@ import KPIs from './pages/KPIs'
 import ProvaSocial from './pages/ProvaSocial'
 import Roadmap from './pages/Roadmap'
 import Configuracoes from './pages/Configuracoes'
+import DevMode from './pages/DevMode'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -58,6 +59,7 @@ function AppRoutes() {
       <Route path="/ProvaSocial" element={<Layout currentPageName="ProvaSocial"><ProvaSocial /></Layout>} />
       <Route path="/Roadmap" element={<Layout currentPageName="Roadmap"><Roadmap /></Layout>} />
       <Route path="/Configuracoes" element={<Layout currentPageName="Configuracoes"><Configuracoes /></Layout>} />
+      <Route path="/DevMode" element={<Layout currentPageName="DevMode"><DevMode /></Layout>} />
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   )
