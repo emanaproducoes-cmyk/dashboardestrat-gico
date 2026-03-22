@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from "react"
 import { Sparkles, Clock, Pencil, Check, Camera, Shield } from "lucide-react"
 import type { GradientOption } from "../../lib/types"
-import { useAuth } from "../../lib/AuthContext"
-import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import HeaderMiniCharts from "./HeaderMiniCharts"
 import { useFontSettings } from "../../lib/FontSettingsContext"
 import { useUserPhoto } from "../../lib/UserPhotoContext"
+import { useAuth } from "../../lib/AuthContext"
+import { getGlobalItem, setGlobalItem } from "../../lib/auth"
 import { usePlanningData } from "../../lib/PlanningDataContext"
 
 interface EditableFieldProps {
@@ -17,7 +17,7 @@ interface EditableFieldProps {
   isAdmin: boolean
 }
 
-function EditableField({ value, onChange, className = "", style, multiline, isAdmin }: EditableFieldProps) {
+function EditableField({ value, onChange, className = '', style, multiline, isAdmin }: EditableFieldProps) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState(value)
   useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
@@ -30,7 +30,7 @@ function EditableField({ value, onChange, className = "", style, multiline, isAd
       autoFocus: true,
       value: draft,
       onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setDraft(e.target.value),
-      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === "Enter" && !multiline) save() },
+      onKeyDown: (e: React.KeyboardEvent) => { if (e.key === 'Enter' && !multiline) save() },
       className: `bg-white/20 border border-white/40 rounded px-2 py-1 text-white outline-none min-w-[120px] ${className}`,
       style,
     }
@@ -97,33 +97,32 @@ const DEFAULTS = {
   ]
 }
 
-export default function EditableHeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
-  const gradientCss = accentGradient?.css || "linear-gradient(135deg, #3B6AF5, #7B35EF)"
-  const { user } = useAuth()
-  const isAdmin = user?.isAdmin ?? false
+export default function HeroHeader({ accentGradient }: { accentGradient?: GradientOption }) {
+  const gradientCss = accentGradient?.css || 'linear-gradient(135deg, #3B6AF5, #7B35EF)'
   const { fontSettings } = useFontSettings()
   const { photo, savePhoto } = useUserPhoto()
+  const { user } = useAuth()
   const { data: planningData } = usePlanningData()
+  const isAdmin = user?.isAdmin ?? false
 
-  const [companyName, setCompanyName] = useState(() =>
-    getGlobalItem('hero_companyName') || planningData.empresa.nome || DEFAULTS.companyName
+  const [companyName, setCompanyName] = useState(
+    planningData.empresa.nome || getGlobalItem('hero_companyName') || DEFAULTS.companyName
   )
-  const [tagline, setTagline] = useState(() =>
-    getGlobalItem('hero_tagline') || planningData.empresa.segmento || DEFAULTS.tagline
+  const [tagline, setTagline] = useState(
+    planningData.empresa.segmento || getGlobalItem('hero_tagline') || DEFAULTS.tagline
   )
-  const [subtitle, setSubtitle] = useState(() =>
-    getGlobalItem('hero_subtitle') || planningData.missaoVisao.missao?.slice(0, 80) || DEFAULTS.subtitle
+  const [subtitle, setSubtitle] = useState(
+    planningData.missaoVisao.missao?.slice(0, 80) || getGlobalItem('hero_subtitle') || DEFAULTS.subtitle
   )
-  const [description, setDescription] = useState(() =>
-    getGlobalItem('hero_description') || planningData.missaoVisao.visao || DEFAULTS.description
+  const [description, setDescription] = useState(
+    planningData.missaoVisao.visao || getGlobalItem('hero_description') || DEFAULTS.description
   )
   const [stats, setStats] = useState<StatItem[]>(() => {
     const saved = getGlobalItem('hero_stats')
     if (saved) return JSON.parse(saved)
     if (planningData.kpis.filter(k => k.indicador).length > 0) {
       return planningData.kpis.filter(k => k.indicador).slice(0, 4).map(k => ({
-        value: k.meta || "—",
-        label: k.indicador
+        value: k.meta || "—", label: k.indicador
       }))
     }
     return DEFAULTS.stats
@@ -132,16 +131,20 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   const fileRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
-    if (!getGlobalItem('hero_companyName') && planningData.empresa.nome) {
-      setCompanyName(planningData.empresa.nome)
-    }
+    if (planningData.empresa.nome) setCompanyName(planningData.empresa.nome)
   }, [planningData.empresa.nome])
 
   useEffect(() => {
-    if (!getGlobalItem('hero_subtitle') && planningData.missaoVisao.missao) {
-      setSubtitle(planningData.missaoVisao.missao.slice(0, 80))
-    }
+    if (planningData.empresa.segmento) setTagline(planningData.empresa.segmento)
+  }, [planningData.empresa.segmento])
+
+  useEffect(() => {
+    if (planningData.missaoVisao.missao) setSubtitle(planningData.missaoVisao.missao.slice(0, 80))
   }, [planningData.missaoVisao.missao])
+
+  useEffect(() => {
+    if (planningData.missaoVisao.visao) setDescription(planningData.missaoVisao.visao)
+  }, [planningData.missaoVisao.visao])
 
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 60000)
@@ -149,15 +152,15 @@ export default function EditableHeroHeader({ accentGradient }: { accentGradient?
   }, [])
 
   const save = (key: string, value: string) => { if (isAdmin) setGlobalItem(key, value) }
-  const time = now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })
-  const date = now.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" })
+  const time = now.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+  const date = now.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
 
   const handlePhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
     const reader = new FileReader()
     reader.onload = (ev) => {
-      if (ev.target?.result && typeof ev.target.result === "string") savePhoto(ev.target.result)
+      if (ev.target?.result && typeof ev.target.result === 'string') savePhoto(ev.target.result)
     }
     reader.readAsDataURL(file)
   }
