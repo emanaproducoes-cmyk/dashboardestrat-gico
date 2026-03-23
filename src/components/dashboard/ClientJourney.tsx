@@ -1,12 +1,35 @@
-import React, { useState } from "react"
-import { FileSignature, Send, CheckCircle2, Trophy, Flag, X, ArrowRight } from "lucide-react"
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, LineChart, Line, CartesianGrid, Legend, PieChart, Pie, Cell } from "recharts"
+import React, { useState, useEffect } from "react"
+import { FileSignature, Send, CheckCircle2, Trophy, Flag, X, ArrowRight, Code2 } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell } from "recharts"
+import { db } from "../../lib/firebase"
+import { doc, onSnapshot } from "firebase/firestore"
 
-const steps = [
+export interface ClienteEtapa {
+  title: string
+  subtitle: string
+  description: string
+  iconKey: string
+  color: string
+  accent: string
+  detail: {
+    objetivo: string
+    acoes: string[]
+    kpis: { label: string; val: string; meta: string }[]
+    barData: { mes: string; [k: string]: string | number }[]
+    pieData: { name: string; value: number }[]
+    insight: string
+  }
+}
+
+const ICON_MAP: Record<string, React.FC<{ size?: number; className?: string }>> = {
+  FileSignature, Send, CheckCircle2, Trophy, Flag
+}
+
+const DEFAULT_STEPS: ClienteEtapa[] = [
   {
-    title: "Contrato", subtitle: "Fase de Recepção",
+    title: "Contrato", subtitle: "Fase de Recepção", iconKey: "FileSignature",
+    color: "from-cyan-400 to-blue-500", accent: "#06b6d4",
     description: "Mensagem de boas-vindas e felicitações. Convite para seguir nossas redes sociais.",
-    icon: FileSignature, color: "from-cyan-400 to-blue-500", accent: "#06b6d4",
     detail: {
       objetivo: "Criar conexão emocional desde o primeiro contato e ampliar audiência digital.",
       acoes: ["Mensagem personalizada de boas-vindas", "Convite para LinkedIn e YouTube", "Kit de boas-vindas digital", "E-mail de apresentação da equipe"],
@@ -17,9 +40,9 @@ const steps = [
     }
   },
   {
-    title: "Protocolo", subtitle: "Projeto enviado ao Banco",
+    title: "Protocolo", subtitle: "Projeto enviado ao Banco", iconKey: "Send",
+    color: "from-blue-400 to-blue-600", accent: "#3b82f6",
     description: "Mensagem de reforço positivo. Convite para seguir nossas redes sociais.",
-    icon: Send, color: "from-blue-400 to-blue-600", accent: "#3b82f6",
     detail: {
       objetivo: "Manter o cliente engajado durante o período de análise bancária e reforçar a confiança.",
       acoes: ["Atualização semanal do status", "Conteúdo educativo sobre FNO", "Webinar exclusivo para clientes", "Newsletter com cases de aprovação"],
@@ -30,9 +53,9 @@ const steps = [
     }
   },
   {
-    title: "Aprovação", subtitle: "Projeto aprovado",
+    title: "Aprovação", subtitle: "Projeto aprovado", iconKey: "CheckCircle2",
+    color: "from-blue-500 to-indigo-600", accent: "#6366f1",
     description: "Mensagem para celebrar e orientar implementação e próximo marco.",
-    icon: CheckCircle2, color: "from-blue-500 to-indigo-600", accent: "#6366f1",
     detail: {
       objetivo: "Celebrar a conquista e iniciar o processo de social proof com autorização do cliente.",
       acoes: ["Mensagem de congratulações personalizada", "Solicitação de depoimento em vídeo", "Publicação do case com autorização", "Convite para evento de celebração"],
@@ -43,9 +66,9 @@ const steps = [
     }
   },
   {
-    title: "Conclusão", subtitle: "Projeto contratado",
+    title: "Conclusão", subtitle: "Projeto contratado", iconKey: "Trophy",
+    color: "from-indigo-500 to-violet-600", accent: "#8b5cf6",
     description: "Mensagem de conquista e vitória, implementação e próximo marco.",
-    icon: Trophy, color: "from-indigo-500 to-violet-600", accent: "#8b5cf6",
     detail: {
       objetivo: "Consolidar o relacionamento e identificar oportunidades de expansão do contrato.",
       acoes: ["Reunião de kickoff de implementação", "Apresentação do cronograma", "Conexão com parceiros operacionais", "Programa de fidelidade para clientes"],
@@ -56,9 +79,9 @@ const steps = [
     }
   },
   {
-    title: "Encerramento", subtitle: "Projeto concluído",
+    title: "Encerramento", subtitle: "Projeto concluído", iconKey: "Flag",
+    color: "from-violet-500 to-purple-600", accent: "#a855f7",
     description: "Formalizar o encerramento, agradecer, convidar para social proof.",
-    icon: Flag, color: "from-violet-500 to-purple-600", accent: "#a855f7",
     detail: {
       objetivo: "Transformar clientes encerrados em embaixadores da marca e gerar prova social duradoura.",
       acoes: ["Relatório final de resultados", "Vídeo de storytelling do caso", "Publicação no site 'Histórias que Transformam'", "Convite para eventos e palestras"],
@@ -73,29 +96,71 @@ const steps = [
 const PIE_COLORS = ["#6366f1", "#10b981", "#f59e0b", "#ef4444"]
 
 export default function ClientJourney({ dark }: { dark?: boolean }) {
-  const [selected, setSelected] = useState<typeof steps[0] | null>(null)
+  const [steps, setSteps] = useState<ClienteEtapa[]>(DEFAULT_STEPS)
+  const [selected, setSelected] = useState<ClienteEtapa | null>(null)
+  const [hovered, setHovered] = useState<number | null>(null)
+
+  useEffect(() => {
+    const ref = doc(db, "planning", "main")
+    const unsub = onSnapshot(ref, (snap) => {
+      if (snap.exists()) {
+        const d = snap.data()
+        if (d.clienteJornada && Array.isArray(d.clienteJornada) && d.clienteJornada.length) {
+          setSteps(d.clienteJornada)
+        }
+      }
+    })
+    return unsub
+  }, [])
+
   const valC = dark ? "text-white" : "text-gray-900"
   const subC = dark ? "text-white/50" : "text-gray-500"
 
   return (
     <>
       <div>
-        <h2 className={`text-xl font-bold mb-1 ${valC}`}>Gamificação do Ciclo do Cliente</h2>
-        <p className={`text-sm mb-6 ${subC}`}>Processo que mapeia a jornada do cliente — clique em cada etapa para ver detalhes</p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="flex items-start justify-between mb-1">
+          <div>
+            <h2 className={`text-xl font-bold ${valC}`}>Gamificação do Ciclo do Cliente</h2>
+            <p className={`text-sm mt-0.5 ${subC}`}>Clique em cada etapa para ver detalhes</p>
+          </div>
+          {/* Dev Mode badge */}
+          <div
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg mt-1 flex-shrink-0"
+            style={{ background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.22)" }}
+            title="Para editar: Dev Mode → aba Jornada do Cliente"
+          >
+            <Code2 size={11} className="text-indigo-400" />
+            <span className="text-[10px] text-indigo-400 font-semibold">Dev Mode → Jornada</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-6">
           {steps.map((step, i) => {
-            const Icon = step.icon
+            const Icon = ICON_MAP[step.iconKey] || FileSignature
+            const isHov = hovered === i
             return (
               <div key={i} className="relative group">
                 <div
-                  className={`rounded-xl border p-5 transition-all duration-300 h-full flex flex-col cursor-pointer hover:scale-[1.03] ${dark ? 'bg-white/10 border-white/10 hover:bg-white/15' : 'bg-white border-gray-100 hover:shadow-lg'}`}
+                  className={`rounded-xl border p-5 transition-all duration-300 h-full flex flex-col cursor-pointer
+                    ${dark ? "bg-white/10 border-white/10" : "bg-white border-gray-100"}
+                    ${isHov ? (dark ? "bg-white/15 shadow-lg" : "shadow-lg") : ""}
+                  `}
+                  style={{
+                    transform: isHov ? "translateY(-4px)" : "none",
+                    borderColor: isHov ? `${step.accent}60` : undefined,
+                    boxShadow: isHov ? `0 8px 24px ${step.accent}30` : undefined,
+                    transition: "all 0.25s ease"
+                  }}
+                  onMouseEnter={() => setHovered(i)}
+                  onMouseLeave={() => setHovered(null)}
                   onClick={() => setSelected(step)}
                 >
                   <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-4`}>
                     <Icon size={20} className="text-white" />
                   </div>
                   <div className="flex items-center gap-2 mb-2">
-                    <span className={`text-xs font-bold ${dark ? 'text-white/20' : 'text-gray-300'}`}>{String(i + 1).padStart(2, '0')}</span>
+                    <span className={`text-xs font-bold ${dark ? "text-white/20" : "text-gray-300"}`}>{String(i + 1).padStart(2, "0")}</span>
                     <h3 className={`font-bold text-sm ${valC}`}>{step.title}</h3>
                   </div>
                   <p className="text-xs font-semibold mb-2" style={{ color: step.accent }}>{step.subtitle}</p>
@@ -111,8 +176,18 @@ export default function ClientJourney({ dark }: { dark?: boolean }) {
             )
           })}
         </div>
+
+        {/* Dev mode path hint */}
+        <div className="flex items-center gap-2 mt-4 p-2.5 rounded-lg"
+          style={{ background: "rgba(99,102,241,0.06)", border: "1px solid rgba(99,102,241,0.14)" }}>
+          <Code2 size={12} className="text-indigo-400 flex-shrink-0" />
+          <p className="text-[11px] text-indigo-400">
+            Para editar etapas, textos e dados: <strong>Dev Mode → aba "Jornada do Cliente"</strong>. Dados salvos aparecem aqui em tempo real para todos os usuários.
+          </p>
+        </div>
       </div>
 
+      {/* Detail Modal */}
       {selected && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -120,7 +195,7 @@ export default function ClientJourney({ dark }: { dark?: boolean }) {
             <div className="flex items-center justify-between p-6 border-b border-gray-100" style={{ background: `${selected.accent}12` }}>
               <div className="flex items-center gap-4">
                 <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${selected.color} flex items-center justify-center`}>
-                  <selected.icon size={24} className="text-white" />
+                  {React.createElement(ICON_MAP[selected.iconKey] || FileSignature, { size: 24, className: "text-white" })}
                 </div>
                 <div>
                   <h2 className="text-2xl font-extrabold text-gray-900">{selected.title}</h2>
@@ -171,8 +246,8 @@ export default function ClientJourney({ dark }: { dark?: boolean }) {
                       <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                       <XAxis dataKey="mes" tick={{ fontSize: 10 }} />
                       <YAxis tick={{ fontSize: 10 }} />
-                      <Tooltip />
-                      <Bar dataKey={Object.keys(selected.detail.barData[0]).find(k => k !== 'mes')!} fill={selected.accent} radius={4} />
+                      <Tooltip contentStyle={{ fontSize: 11 }} />
+                      <Bar dataKey={Object.keys(selected.detail.barData[0]).find(k => k !== "mes")!} fill={selected.accent} radius={4} />
                     </BarChart>
                   </ResponsiveContainer>
                 </div>
@@ -180,10 +255,11 @@ export default function ClientJourney({ dark }: { dark?: boolean }) {
                   <p className="text-xs font-bold text-gray-700 mb-2">Distribuição por Canal</p>
                   <ResponsiveContainer width="100%" height={160}>
                     <PieChart>
-                      <Pie data={selected.detail.pieData} cx="50%" cy="50%" outerRadius={60} dataKey="value" label={({ name, value }) => `${name} ${value}%`} labelLine={false}>
+                      <Pie data={selected.detail.pieData} cx="50%" cy="50%" outerRadius={60} dataKey="value"
+                        label={({ name, value }) => `${name} ${value}%`} labelLine={false}>
                         {selected.detail.pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
                       </Pie>
-                      <Tooltip />
+                      <Tooltip contentStyle={{ fontSize: 11 }} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
@@ -192,6 +268,15 @@ export default function ClientJourney({ dark }: { dark?: boolean }) {
               <div className="rounded-xl p-4 border-l-4" style={{ background: `${selected.accent}08`, borderColor: selected.accent }}>
                 <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>💡 Insight Estratégico</p>
                 <p className="text-sm text-gray-700 leading-relaxed">{selected.detail.insight}</p>
+              </div>
+
+              {/* Dev Mode path inside modal */}
+              <div className="flex items-center gap-2 p-3 rounded-xl"
+                style={{ background: "rgba(99,102,241,0.07)", border: "1px solid rgba(99,102,241,0.2)" }}>
+                <Code2 size={13} className="text-indigo-500 flex-shrink-0" />
+                <p className="text-xs text-indigo-500">
+                  Edite esses dados em: <strong>Dev Mode → aba "Jornada do Cliente"</strong>
+                </p>
               </div>
             </div>
           </div>
