@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw, Radio } from "lucide-react"
+import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw, Radio, LayoutGrid, Map, Route } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { usePlanningData } from "../lib/PlanningDataContext"
 import type { GradientOption } from "../lib/types"
@@ -14,6 +14,9 @@ import DevRiscos from "../components/devmode/DevRiscos"
 import DevEquipe from "../components/devmode/DevEquipe"
 import DevAcompanhamento from "../components/devmode/DevAcompanhamento"
 import DevCanais from "../components/devmode/DevCanais"
+import DevContentDistribution from "../components/devmode/DevContentDistribution"
+import DevClientJourney from "../components/devmode/DevClientJourney"
+import DevRoadmap from "../components/devmode/DevRoadmap"
 
 interface PageProps {
   darkMode?: boolean
@@ -32,6 +35,9 @@ const TABS = [
   { id: "equipe",         label: "Equipe",          icon: Users },
   { id: "acompanhamento", label: "Acomp.",          icon: RefreshCw },
   { id: "canais",         label: "Canais",          icon: Radio },
+  { id: "conteudo",       label: "Conteúdo",        icon: LayoutGrid },
+  { id: "jornada",        label: "Jornada",         icon: Map },
+  { id: "roadmap",        label: "Roadmap",         icon: Route },
 ]
 
 export default function DevMode({ darkMode = true, accentGradient }: PageProps) {
@@ -127,6 +133,9 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
         {activeTab === "equipe"         && <DevEquipe         darkMode={darkMode} accentGradient={accentGradient} />}
         {activeTab === "acompanhamento" && <DevAcompanhamento darkMode={darkMode} accentGradient={accentGradient} />}
         {activeTab === "canais"         && <DevCanais         darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "conteudo"       && <DevContentDistribution dark={darkMode} />}
+        {activeTab === "jornada"        && <DevClientJourney       dark={darkMode} />}
+        {activeTab === "roadmap"        && <DevRoadmap             dark={darkMode} />}
       </div>
     </div>
   )
