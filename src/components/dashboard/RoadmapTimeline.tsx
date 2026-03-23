@@ -1,278 +1,255 @@
 import React, { useState, useEffect } from "react"
-import {
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Cell, LabelList
-} from "recharts"
-import { doc, onSnapshot } from "firebase/firestore"
-import { db } from "../../lib/firebase"
-import { Info, X, TrendingUp, Edit3 } from "lucide-react"
+import { CheckCircle2, Clock, Pause, Pencil, Check, X, ArrowRight } from "lucide-react"
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, RadarChart, Radar, PolarGrid, PolarAngleAxis } from "recharts"
 
-export interface ContentItem {
-  id: string
-  name: string
-  value: number
+interface PhaseItem {
+  quarter: string
+  title: string
+  period: string
+  status: "complete" | "in_progress" | "pending"
+  progress: number
   color: string
-  desc: string
-  meta: number
-  exemplos: string
+  accent: string
+  items: string[]
+  detail: {
+    objetivo: string
+    kpis: { label: string; val: string; meta: string }[]
+    radarData: { metric: string; val: number }[]
+    lineData: { semana: string; progresso: number }[]
+    insight: string
+  }
 }
 
-const DEFAULT_ITEMS: ContentItem[] = [
-  { id: "c1", name: "Antes/Depois", value: 40, color: "#f97316", desc: "Transformações reais de negócios — do projeto ao financiamento aprovado.", meta: 45, exemplos: "Cases FNO, projetos aprovados, resultados financeiros" },
-  { id: "c2", name: "Vídeos Educ.", value: 30, color: "#eab308", desc: "Explicações sobre FNO, BNDES e linhas de crédito simplificadas.", meta: 30, exemplos: "Tutoriais, webinars, explicações de processo" },
-  { id: "c3", name: "Reposts",      value: 20, color: "#06b6d4", desc: "Curadoria de conteúdo relevante do setor com perspectiva da AF.", meta: 15, exemplos: "Notícias do BNDES, updates de política de crédito" },
-  { id: "c4", name: "Bastidores",   value: 10, color: "#a855f7", desc: "Cultura, equipe e processos — humanizando a marca AF.", meta: 10, exemplos: "Rotina da equipe, bastidores de projetos, eventos" },
+const initialPhases: PhaseItem[] = [
+  {
+    quarter: "Q1", title: "Lançamento do Mixchannel", period: "Mar – Abr",
+    status: "complete", progress: 100, color: "from-blue-600 to-indigo-700", accent: "#6366f1",
+    items: ["Lançamento das novas redes: LI e YT", "Captação de novos seguidores para os novos canais", "Postagens semanais em ambos canais"],
+    detail: {
+      objetivo: "Estabelecer presença digital sólida no LinkedIn e YouTube, criando base de audiência qualificada para os próximos trimestres.",
+      kpis: [{ label: "Seguidores LinkedIn", val: "80", meta: "200" }, { label: "Inscritos YouTube", val: "50", meta: "500" }, { label: "Posts publicados", val: "24", meta: "24" }],
+      radarData: [{ metric: "Alcance", val: 100 }, { metric: "Conteúdo", val: 100 }, { metric: "Engajamento", val: 80 }, { metric: "Conversão", val: 65 }, { metric: "Autoridade", val: 70 }],
+      lineData: [{ semana: "S1", progresso: 20 }, { semana: "S2", progresso: 45 }, { semana: "S3", progresso: 70 }, { semana: "S4", progresso: 85 }, { semana: "S5", progresso: 95 }, { semana: "S6", progresso: 100 }],
+      insight: "Q1 foi concluído com sucesso. A base de seguidores estabelecida cria o alicerce para as conversões nos próximos trimestres."
+    }
+  },
+  {
+    quarter: "Q2", title: "Coletar Social", period: "Jun – Ago",
+    status: "in_progress", progress: 60, color: "from-teal-600 to-cyan-700", accent: "#0891b2",
+    items: ["Início das captações de prova social", "Planejamento de lançamento", "Lançamento de teasers"],
+    detail: {
+      objetivo: "Captar depoimentos e cases de sucesso dos clientes aprovados para construção da prova social estratégica.",
+      kpis: [{ label: "Clientes abordados", val: "8", meta: "12" }, { label: "Depoimentos captados", val: "3", meta: "4" }, { label: "Teasers publicados", val: "6", meta: "8" }],
+      radarData: [{ metric: "Captação", val: 60 }, { metric: "Qualidade", val: 75 }, { metric: "Alcance", val: 55 }, { metric: "Engajamento", val: 65 }, { metric: "Conversão", val: 50 }],
+      lineData: [{ semana: "S1", progresso: 10 }, { semana: "S2", progresso: 25 }, { semana: "S3", progresso: 40 }, { semana: "S4", progresso: 55 }, { semana: "S5", progresso: 60 }, { semana: "S6", progresso: 60 }],
+      insight: "Estamos a 60% do objetivo. Os próximos passos focam em ampliar o número de clientes abordados e finalizar os teasers restantes."
+    }
+  },
+  {
+    quarter: "Q3", title: "Publicar Social Proof", period: "Set – Nov",
+    status: "pending", progress: 0, color: "from-rose-500 to-pink-600", accent: "#e11d48",
+    items: ["3 a 4 Storytellings de casos de sucesso", "Publicações em todo omnichannel", "Publicações no site: Histórias que Transformam"],
+    detail: {
+      objetivo: "Publicar cases de sucesso elaborados em formato de storytelling, distribuídos em todos os canais digitais da AF.",
+      kpis: [{ label: "Cases publicados", val: "0", meta: "4" }, { label: "Alcance estimado", val: "0", meta: "50K" }, { label: "Leads gerados", val: "0", meta: "20" }],
+      radarData: [{ metric: "Conteúdo", val: 0 }, { metric: "Distribuição", val: 0 }, { metric: "Alcance", val: 0 }, { metric: "Conversão", val: 0 }, { metric: "Autoridade", val: 0 }],
+      lineData: [{ semana: "S1", progresso: 0 }, { semana: "S2", progresso: 0 }, { semana: "S3", progresso: 0 }, { semana: "S4", progresso: 0 }, { semana: "S5", progresso: 0 }, { semana: "S6", progresso: 0 }],
+      insight: "Q3 inicia em Setembro. A qualidade dos cases captados em Q2 será determinante para o impacto desta fase."
+    }
+  },
+  {
+    quarter: "Q4", title: "Consolidar Autoridade", period: "Dez",
+    status: "pending", progress: 0, color: "from-blue-500 to-blue-700", accent: "#1d4ed8",
+    items: ["Publicações no blog: temas transversais", "Consolidação da autoridade digital", "Avaliação de resultados anuais"],
+    detail: {
+      objetivo: "Consolidar a AF como referência digital em FNO no Pará, com publicações de alta autoridade e avaliação do ciclo anual.",
+      kpis: [{ label: "Posts no blog", val: "0", meta: "6" }, { label: "Posição SEO média", val: "-", meta: "Top 10" }, { label: "NPS anual", val: "-", meta: "85+" }],
+      radarData: [{ metric: "SEO", val: 0 }, { metric: "Autoridade", val: 0 }, { metric: "Conteúdo", val: 0 }, { metric: "Resultados", val: 0 }, { metric: "Planejamento", val: 0 }],
+      lineData: [{ semana: "S1", progresso: 0 }, { semana: "S2", progresso: 0 }, { semana: "S3", progresso: 0 }, { semana: "S4", progresso: 0 }, { semana: "S5", progresso: 0 }, { semana: "S6", progresso: 0 }],
+      insight: "Q4 é o trimestre de consolidação e avaliação. O sucesso depende da execução consistente de Q1 a Q3."
+    }
+  }
 ]
 
-function ChartTooltipContent({ active, payload, label, dark }: any) {
-  if (!active || !payload?.length) return null
-  const item = payload[0]
-  const bg = dark ? "rgba(10,18,40,0.97)" : "rgba(255,255,255,0.99)"
-  const border = dark ? "rgba(255,255,255,0.15)" : "rgba(0,0,0,0.10)"
-  const textMain = dark ? "#ffffff" : "#111827"
-  const textSub = dark ? "rgba(255,255,255,0.55)" : "#6b7280"
+const statusConfig = {
+  complete:    { icon: CheckCircle2, label: "Completo",     className: "text-emerald-600 bg-emerald-50" },
+  in_progress: { icon: Clock,        label: "Em Andamento", className: "text-blue-600 bg-blue-50" },
+  pending:     { icon: Pause,        label: "Pendente",     className: "text-gray-400 bg-gray-100" },
+}
+
+function EditField({ value, onChange, className = "", dark, isAdmin }: {
+  value: string; onChange: (v: string) => void
+  className?: string; dark?: boolean; isAdmin: boolean
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(value)
+  useEffect(() => { if (!editing) setDraft(value) }, [value, editing])
+  const save = () => { onChange(draft); setEditing(false) }
+
+  if (!isAdmin) return <span className={className}>{value}</span>
+
+  if (editing) return (
+    <span className="inline-flex items-center gap-1">
+      <input autoFocus value={draft} onChange={e => setDraft(e.target.value)}
+        onKeyDown={e => e.key === 'Enter' && save()}
+        className={`bg-black/10 border border-black/20 rounded px-1 py-0.5 outline-none ${className}`}
+        style={{ minWidth: 80 }} />
+      <button onClick={save} className="p-0.5 rounded bg-black/10"><Check size={11} /></button>
+    </span>
+  )
+
   return (
-    <div style={{
-      background: bg, border: "1px solid " + border, borderRadius: 12,
-      padding: "12px 16px", minWidth: 180, boxShadow: "0 12px 40px rgba(0,0,0,0.35)"
-    }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
-        <div style={{ width: 10, height: 10, borderRadius: "50%", background: item.fill, flexShrink: 0 }} />
-        <span style={{ color: textMain, fontSize: 13, fontWeight: 700 }}>{label}</span>
-      </div>
-      <div style={{ color: item.fill, fontSize: 22, fontWeight: 900, lineHeight: 1, marginBottom: 4 }}>
-        {item.value}%
-      </div>
-      {payload[0]?.payload?.meta !== undefined && (
-        <div style={{ color: textSub, fontSize: 11 }}>
-          Meta: <span style={{ color: "#22c55e", fontWeight: 700 }}>{payload[0].payload.meta}%</span>
-        </div>
-      )}
-    </div>
+    <span className="inline-flex items-center gap-1 group/ef cursor-pointer" onClick={() => setEditing(true)}>
+      <span className={className}>{value}</span>
+      <Pencil size={11} className={`opacity-0 group-hover/ef:opacity-60 transition-opacity flex-shrink-0 ${dark ? 'text-white/50' : 'text-gray-400'}`} />
+    </span>
   )
 }
 
-export default function ContentDistribution({ dark }: { dark?: boolean }) {
-  const [items, setItems] = useState<ContentItem[]>(DEFAULT_ITEMS)
-  const [detail, setDetail] = useState<ContentItem | null>(null)
-  const [hoveredId, setHoveredId] = useState<string | null>(null)
+export default function RoadmapTimeline({ dark, isAdmin = false }: { dark?: boolean; isAdmin?: boolean }) {
+  const [phases, setPhases] = useState<PhaseItem[]>(initialPhases)
+  const [selected, setSelected] = useState<PhaseItem | null>(null)
 
-  useEffect(() => {
-    const ref = doc(db, "planning", "main")
-    const unsub = onSnapshot(ref, snap => {
-      if (snap.exists()) {
-        const d = snap.data()
-        if (d?.contentDistribution?.length) setItems(d.contentDistribution)
-      }
-    })
-    return unsub
-  }, [])
+  const updatePhase = (i: number, field: keyof PhaseItem, value: string | number) => {
+    if (!isAdmin) return
+    setPhases(prev => prev.map((p, idx) => idx === i ? { ...p, [field]: value } : p))
+  }
 
-  const bg = dark ? "rgba(255,255,255,0.04)" : "rgba(255,255,255,0.95)"
-  const border = dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.06)"
-  const textMain = dark ? "#ffffff" : "#111827"
-  const textSub = dark ? "rgba(255,255,255,0.45)" : "#6b7280"
-  const gridColor = dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)"
-  const axisColor = dark ? "rgba(255,255,255,0.35)" : "#9ca3af"
-
-  const total = items.reduce((s, i) => s + i.value, 0)
+  const updateItem = (phaseIdx: number, itemIdx: number, value: string) => {
+    if (!isAdmin) return
+    setPhases(prev => prev.map((p, i) => {
+      if (i !== phaseIdx) return p
+      const newItems = [...p.items]; newItems[itemIdx] = value
+      return { ...p, items: newItems }
+    }))
+  }
 
   return (
-    <div style={{ background: bg, border: "1px solid " + border, borderRadius: 16, padding: "24px" }}>
-      {/* Header */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: 20 }}>
-        <div>
-          <h3 style={{ color: textMain, fontWeight: 700, fontSize: 16, marginBottom: 4 }}>
-            Distribuição de Conteúdo
-          </h3>
-          <p style={{ color: textSub, fontSize: 12 }}>
-            Mix estratégico por tipo · <span style={{ color: "#f97316", fontWeight: 600 }}>Dev Mode → Conteúdo</span> para editar
-          </p>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, background: dark ? "rgba(249,115,22,0.12)" : "rgba(249,115,22,0.08)", borderRadius: 99, padding: "4px 10px", border: "1px solid rgba(249,115,22,0.25)" }}>
-          <div style={{ width: 6, height: 6, borderRadius: "50%", background: "#f97316" }} />
-          <span style={{ color: "#f97316", fontSize: 11, fontWeight: 700 }}>
-            {total}% mapeado
-          </span>
-        </div>
-      </div>
-
-      {/* Bar Chart — inspired by the reference image */}
-      <div style={{ height: 200, marginBottom: 20 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart
-            data={items.map(i => ({ ...i, gap: i.meta - i.value }))}
-            margin={{ top: 12, right: 8, left: -24, bottom: 0 }}
-            barSize={36}
-          >
-            <CartesianGrid vertical={false} stroke={gridColor} strokeDasharray="3 3" />
-            <XAxis
-              dataKey="name"
-              tick={{ fill: axisColor, fontSize: 11, fontWeight: 500 }}
-              axisLine={false} tickLine={false}
-            />
-            <YAxis
-              tick={{ fill: axisColor, fontSize: 10 }}
-              axisLine={false} tickLine={false}
-              tickFormatter={v => v + "%"}
-              domain={[0, 55]}
-            />
-            <Tooltip content={<ChartTooltipContent dark={dark} />} cursor={{ fill: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", radius: 8 }} />
-            <Bar
-              dataKey="value"
-              radius={[6, 6, 0, 0]}
-              onClick={(d) => setDetail(d as ContentItem)}
-              style={{ cursor: "pointer" }}
-            >
-              {items.map((item) => (
-                <Cell
-                  key={item.id}
-                  fill={hoveredId === item.id ? item.color : item.color + "cc"}
-                  style={{ filter: hoveredId === item.id ? "brightness(1.2)" : "none", transition: "all 0.2s" }}
-                  onMouseEnter={() => setHoveredId(item.id)}
-                  onMouseLeave={() => setHoveredId(null)}
-                />
-              ))}
-              <LabelList
-                dataKey="value"
-                position="top"
-                formatter={(v: any) => v + "%"}
-                style={{ fill: dark ? "rgba(255,255,255,0.75)" : "#374151", fontSize: 11, fontWeight: 700 }}
-              />
-            </Bar>
-            {/* Meta line as a second bar with opacity */}
-            <Bar dataKey="meta" radius={[3, 3, 0, 0]} fill="transparent">
-              {items.map((item) => (
-                <Cell key={item.id + "_meta"} fill="transparent"
-                  stroke={item.color} strokeWidth={2} strokeDasharray="4 2"
-                />
-              ))}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* Legend cards with hover */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8 }}>
-        {items.map(item => (
-          <button
-            key={item.id}
-            onClick={() => setDetail(item)}
-            onMouseEnter={() => setHoveredId(item.id)}
-            onMouseLeave={() => setHoveredId(null)}
-            style={{
-              display: "flex", alignItems: "center", gap: 10,
-              padding: "10px 12px", borderRadius: 10, cursor: "pointer",
-              background: hoveredId === item.id
-                ? (dark ? item.color + "22" : item.color + "12")
-                : (dark ? "rgba(255,255,255,0.03)" : "rgba(0,0,0,0.02)"),
-              border: "1px solid " + (hoveredId === item.id ? item.color + "50" : (dark ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.05)")),
-              transition: "all 0.2s", textAlign: "left",
-            }}
-          >
-            <div style={{
-              width: 32, height: 32, borderRadius: 8, flexShrink: 0,
-              background: item.color + "20", border: "1px solid " + item.color + "40",
-              display: "flex", alignItems: "center", justifyContent: "center"
-            }}>
-              <div style={{ width: 14, height: 14, borderRadius: 3, background: item.color }} />
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span style={{ color: dark ? "rgba(255,255,255,0.85)" : "#1f2937", fontSize: 12, fontWeight: 600 }}>{item.name}</span>
-                <span style={{ color: item.color, fontSize: 13, fontWeight: 800 }}>{item.value}%</span>
-              </div>
-              <div style={{ marginTop: 4, height: 3, borderRadius: 99, background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)", overflow: "hidden" }}>
-                <div style={{ height: "100%", width: (item.value / 50 * 100) + "%", background: item.color, borderRadius: 99, transition: "width 0.6s ease" }} />
-              </div>
-            </div>
-            <Info size={13} style={{ color: item.color, flexShrink: 0, opacity: hoveredId === item.id ? 1 : 0.4 }} />
-          </button>
-        ))}
-      </div>
-
-      {/* Detail modal */}
-      {detail && (
-        <div
-          style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex", alignItems: "center", justifyContent: "center", padding: 16 }}
-          onClick={() => setDetail(null)}
-        >
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.65)", backdropFilter: "blur(8px)" }} />
-          <div
-            style={{
-              position: "relative", width: "100%", maxWidth: 420,
-              background: dark ? "#0a1628" : "#ffffff",
-              borderRadius: 20, overflow: "hidden", boxShadow: "0 24px 64px rgba(0,0,0,0.5)",
-              border: "1px solid " + detail.color + "35"
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div style={{ padding: "20px 24px", background: detail.color + "15", borderBottom: "1px solid " + detail.color + "25" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
-                    <div style={{ width: 10, height: 10, borderRadius: "50%", background: detail.color }} />
-                    <span style={{ color: detail.color, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.07em" }}>
-                      Tipo de Conteúdo
+    <>
+      <div className="space-y-4">
+        {phases.map((phase, i) => {
+          const StatusIcon = statusConfig[phase.status].icon
+          return (
+            <div key={i} className={`rounded-xl border p-6 transition-all duration-300 group ${dark ? 'bg-white/10 border-white/10 hover:bg-white/15' : 'bg-white border-gray-100 hover:shadow-lg'}`}>
+              <div className="flex flex-col md:flex-row md:items-start gap-4">
+                <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${phase.color} flex items-center justify-center flex-shrink-0`}>
+                  <EditField value={phase.quarter} onChange={v => updatePhase(i, 'quarter', v)} className="text-white font-extrabold text-sm" dark={dark} isAdmin={isAdmin} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-3 mb-2">
+                    <h3 className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`}>
+                      <EditField value={phase.title} onChange={v => updatePhase(i, 'title', v)} className={`font-bold text-lg ${dark ? 'text-white' : 'text-gray-900'}`} dark={dark} isAdmin={isAdmin} />
+                    </h3>
+                    <EditField value={phase.period} onChange={v => updatePhase(i, 'period', v)} className={`text-xs ${dark ? 'text-white/40' : 'text-gray-400'}`} dark={dark} isAdmin={isAdmin} />
+                    <span className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full ${statusConfig[phase.status].className}`}>
+                      <StatusIcon size={12} />{statusConfig[phase.status].label}
                     </span>
                   </div>
-                  <h2 style={{ color: dark ? "#ffffff" : "#111827", fontSize: 20, fontWeight: 800 }}>{detail.name}</h2>
+                  <div className={`w-full h-2 rounded-full overflow-hidden mb-4 ${dark ? 'bg-white/10' : 'bg-gray-100'}`}>
+                    <div className={`h-full rounded-full bg-gradient-to-r ${phase.color} transition-all duration-700`} style={{ width: `${phase.progress}%` }} />
+                  </div>
+                  <ul className="space-y-1.5">
+                    {phase.items.map((item, j) => (
+                      <li key={j} className={`flex items-start gap-2 text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full mt-1.5 flex-shrink-0 ${dark ? 'bg-white/30' : 'bg-gray-300'}`} />
+                        <EditField value={item} onChange={v => updateItem(i, j, v)} className={`text-sm ${dark ? 'text-white/60' : 'text-gray-600'}`} dark={dark} isAdmin={isAdmin} />
+                      </li>
+                    ))}
+                  </ul>
                 </div>
-                <div style={{ textAlign: "right" }}>
-                  <div style={{ color: detail.color, fontSize: 32, fontWeight: 900, lineHeight: 1 }}>{detail.value}%</div>
-                  <div style={{ color: dark ? "rgba(255,255,255,0.4)" : "#9ca3af", fontSize: 11 }}>do mix total</div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`}>
+                    <EditField value={String(phase.progress)} onChange={v => updatePhase(i, 'progress', Number(v) || 0)} className={`text-2xl font-extrabold ${dark ? 'text-white/20' : 'text-gray-200'}`} dark={dark} isAdmin={isAdmin} />%
+                  </div>
+                  <button
+                    onClick={() => setSelected(phase)}
+                    className="flex items-center gap-1 text-xs font-semibold opacity-0 group-hover:opacity-100 transition-opacity px-3 py-1.5 rounded-lg"
+                    style={{ background: `${phase.accent}20`, color: phase.accent }}
+                  >
+                    Ver detalhes <ArrowRight size={11} />
+                  </button>
                 </div>
-              </div>
-              {/* Progress vs meta */}
-              <div style={{ marginTop: 14 }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 4 }}>
-                  <span style={{ color: dark ? "rgba(255,255,255,0.5)" : "#6b7280", fontSize: 11 }}>Atual vs Meta</span>
-                  <span style={{ color: "#22c55e", fontSize: 11, fontWeight: 700 }}>Meta: {detail.meta}%</span>
-                </div>
-                <div style={{ height: 6, background: dark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)", borderRadius: 99, overflow: "hidden" }}>
-                  <div style={{ height: "100%", width: (detail.value / detail.meta * 100) + "%", background: detail.color, borderRadius: 99, transition: "width 0.8s" }} />
-                </div>
-              </div>
-            </div>
-
-            {/* Body */}
-            <div style={{ padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16 }}>
-              <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <TrendingUp size={13} style={{ color: detail.color }} />
-                  <span style={{ color: detail.color, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Descrição</span>
-                </div>
-                <p style={{ color: dark ? "rgba(255,255,255,0.78)" : "#374151", fontSize: 13, lineHeight: 1.6 }}>{detail.desc}</p>
-              </div>
-              <div style={{ background: dark ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)", borderRadius: 12, padding: "14px 16px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 6 }}>
-                  <Edit3 size={13} style={{ color: detail.color }} />
-                  <span style={{ color: detail.color, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em" }}>Exemplos</span>
-                </div>
-                <p style={{ color: dark ? "rgba(255,255,255,0.78)" : "#374151", fontSize: 13, lineHeight: 1.6 }}>{detail.exemplos}</p>
-              </div>
-              <div style={{ background: detail.color + "12", borderRadius: 12, padding: "12px 16px", border: "1px solid " + detail.color + "25" }}>
-                <p style={{ color: dark ? "rgba(255,255,255,0.5)" : "#6b7280", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>
-                  Para editar estes dados
-                </p>
-                <p style={{ color: dark ? "rgba(255,255,255,0.75)" : "#374151", fontSize: 12 }}>
-                  Acesse <span style={{ color: detail.color, fontWeight: 700 }}>Dev Mode → Conteúdo</span> no menu lateral
-                </p>
               </div>
             </div>
+          )
+        })}
+      </div>
 
-            <div style={{ padding: "0 24px 20px" }}>
-              <button
-                onClick={() => setDetail(null)}
-                style={{ width: "100%", padding: "10px", borderRadius: 10, background: detail.color + "15", border: "1px solid " + detail.color + "30", color: detail.color, fontWeight: 700, fontSize: 13, cursor: "pointer" }}
-              >
-                Fechar
-              </button>
+      {selected && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" onClick={() => setSelected(null)}>
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between p-6 border-b border-gray-100" style={{ background: `${selected.accent}10` }}>
+              <div className="flex items-center gap-4">
+                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${selected.color} flex items-center justify-center text-white font-extrabold text-xl`}>{selected.quarter}</div>
+                <div>
+                  <h2 className="text-2xl font-extrabold text-gray-900">{selected.title}</h2>
+                  <p className="text-sm text-gray-500">{selected.period} · {statusConfig[selected.status].label}</p>
+                </div>
+              </div>
+              <button onClick={() => setSelected(null)} className="p-2 rounded-lg hover:bg-gray-100"><X size={18} /></button>
+            </div>
+            <div className="p-6 space-y-6">
+              <div className="rounded-xl p-4" style={{ background: `${selected.accent}10` }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>🎯 Objetivo</p>
+                <p className="text-sm text-gray-700">{selected.detail.objetivo}</p>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm font-bold text-gray-700 mb-3">Progresso Atual</p>
+                  <div className="bg-gray-50 rounded-xl p-4 text-center">
+                    <div className="text-5xl font-extrabold mb-2" style={{ color: selected.accent }}>{selected.progress}%</div>
+                    <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full bg-gradient-to-r ${selected.color}`} style={{ width: `${selected.progress}%`, transition: 'width 1s ease' }} />
+                    </div>
+                    <p className="text-xs text-gray-400 mt-2">Meta: 100%</p>
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-700 mb-3">KPIs</p>
+                  <div className="space-y-2">
+                    {selected.detail.kpis.map((k, i) => (
+                      <div key={i} className="bg-gray-50 rounded-lg p-3 flex justify-between items-center">
+                        <span className="text-xs text-gray-600">{k.label}</span>
+                        <div className="text-right">
+                          <span className="text-sm font-bold" style={{ color: selected.accent }}>{k.val}</span>
+                          <span className="text-xs text-gray-400 ml-1">/ {k.meta}</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Curva de Progresso</p>
+                <ResponsiveContainer width="100%" height={180}>
+                  <LineChart data={selected.detail.lineData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis dataKey="semana" tick={{ fontSize: 11 }} />
+                    <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} unit="%" />
+                    <Tooltip formatter={(v: number) => [`${v}%`, "Progresso"]} />
+                    <Line type="monotone" dataKey="progresso" stroke={selected.accent} strokeWidth={3} dot={{ r: 5, fill: selected.accent }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-700 mb-3">Radar de Competências</p>
+                <ResponsiveContainer width="100%" height={200}>
+                  <RadarChart data={selected.detail.radarData}>
+                    <PolarGrid stroke="#e5e7eb" />
+                    <PolarAngleAxis dataKey="metric" tick={{ fontSize: 11 }} />
+                    <Radar dataKey="val" stroke={selected.accent} fill={selected.accent} fillOpacity={0.25} strokeWidth={2} />
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="rounded-xl p-4 border-l-4" style={{ background: `${selected.accent}08`, borderColor: selected.accent }}>
+                <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: selected.accent }}>💡 Insight</p>
+                <p className="text-sm text-gray-700 leading-relaxed">{selected.detail.insight}</p>
+              </div>
             </div>
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
