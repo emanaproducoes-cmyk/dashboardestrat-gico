@@ -4,35 +4,21 @@ import HeroHeader from "../components/dashboard/HeroHeader"
 import ChannelChart from "../components/dashboard/ChannelChart"
 import ChannelComparison from "../components/dashboard/ChannelComparison"
 import SectionDetailModal from "../components/dashboard/SectionDetailModal"
-import { Linkedin, Youtube, Instagram, Globe, ArrowRight } from "lucide-react"
+import { Linkedin, Youtube, Instagram, Globe, ArrowRight, Info } from "lucide-react"
 import { useFontSettings } from "../lib/FontSettingsContext"
 
 interface ModalSection {
-  title: string
-  subtitle: string
-  description: string
+  title: string; subtitle: string; description: string
   kpis?: { label: string; value: string }[]
-  chart?: {
-    type: "area" | "bar" | "pie"
-    data: Record<string, number | string>[]
-    colors?: string[]
-  }
-  chartTitle?: string
-  bullets?: string[]
-  bulletsTitle?: string
+  chart?: { type: "area" | "bar" | "pie"; data: Record<string, number | string>[]; colors?: string[] }
+  chartTitle?: string; bullets?: string[]; bulletsTitle?: string
 }
 
 interface Channel {
-  id: string
-  name: string
-  icon: React.ReactNode
-  gradient: string
-  accentColor: string
+  id: string; name: string; icon: React.ReactNode; gradient: string; accentColor: string
   h1: { freq: string; format: string; lang: string }
   h2: { freq: string; format: string; lang: string }
-  meta: string
-  tags: string[]
-  modalSection: ModalSection
+  meta: string; tags: string[]; modalSection: ModalSection
 }
 
 const channels: Channel[] = [
@@ -98,61 +84,99 @@ const channels: Channel[] = [
   }
 ]
 
+// Badge indicador Dev Mode para seção de evolução
+function EvolutionDevBadge({ dark }: { dark: boolean }) {
+  const [show, setShow] = useState(false)
+  return (
+    <div className="relative">
+      <button
+        onMouseEnter={() => setShow(true)}
+        onMouseLeave={() => setShow(false)}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold"
+        style={{ background: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.25)" }}>
+        <Info size={10} /> Editar dados
+      </button>
+      {show && (
+        <div className="absolute right-0 top-8 z-30 rounded-xl p-3 shadow-2xl w-60"
+          style={{ background: dark ? "#0a1628" : "#fff", border: "1px solid rgba(59,130,246,0.25)" }}>
+          <p className="text-[10px] font-bold text-blue-400 mb-1.5 uppercase tracking-wider">Como editar os dados</p>
+          <div className="flex items-center gap-1.5 text-[11px] mb-2"
+            style={{ color: dark ? "rgba(255,255,255,0.70)" : "#374151" }}>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400">Dev Mode</span>
+            <ArrowRight size={10} className="text-blue-400" />
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400">Canais</span>
+          </div>
+          <p className="text-[10px]" style={{ color: dark ? "rgba(255,255,255,0.45)" : "#6b7280" }}>
+            Edite os dados mensais de cada canal. As alterações aparecem aqui em tempo real e são salvas no Firestore para todos os usuários.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function Canais({ darkMode = false, accentGradient }: PageProps) {
   const [activeModal, setActiveModal] = useState<Channel | null>(null)
   const { fontSettings } = useFontSettings()
 
-  const bg = darkMode ? "min-h-screen p-6 md:p-8 space-y-8" : "min-h-screen p-6 md:p-8 space-y-8 bg-gray-50"
-  const cardBg = darkMode ? "bg-white/10 border-white/10" : "bg-white border-gray-100"
-  const labelBg = darkMode ? "bg-white/5 text-white/40" : "bg-gray-50 text-gray-500"
-  const valClass = darkMode ? "text-white" : "text-gray-900"
-  const tagClass = darkMode ? "bg-white/10 text-white/60" : "bg-gray-100 text-gray-500"
-  const sectionBg = darkMode ? "rounded-2xl bg-white/8 border border-white/10 p-6" : "rounded-2xl bg-white border border-gray-100 p-6 shadow-sm"
-  const subColor = darkMode ? "rgba(255,255,255,0.5)" : "#6b7280"
+  const cardBg   = darkMode ? "rgba(255,255,255,0.06)" : "rgba(255,255,255,0.95)"
+  const cardBord = darkMode ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.06)"
+  const labelBg  = darkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.03)"
+  const valClass  = darkMode ? "text-white"    : "text-gray-900"
+  const subColor  = darkMode ? "rgba(255,255,255,0.5)" : "#6b7280"
+  const tagBg     = darkMode ? "rgba(255,255,255,0.10)" : "rgba(0,0,0,0.05)"
 
-  const titleStyle = {
+  const sectionStyle: React.CSSProperties = {
+    background: cardBg,
+    border: `1px solid ${cardBord}`,
+    borderRadius: 16, padding: 24,
+  }
+
+  const titleStyle: React.CSSProperties = {
     fontSize: `${fontSettings.titulo.size}px`,
     textAlign: fontSettings.titulo.align as any,
     color: darkMode ? "#ffffff" : "#111827",
-    fontWeight: 700,
-    marginBottom: "4px",
+    fontWeight: 800, marginBottom: 4,
   }
-  const subStyle = {
+  const subStyle: React.CSSProperties = {
     fontSize: `${fontSettings.subtitulo1.size}px`,
     textAlign: fontSettings.subtitulo1.align as any,
-    color: subColor,
-    marginBottom: "20px",
+    color: subColor, marginBottom: 20,
   }
 
   return (
-    <div className={bg}>
-      <HeroHeader />
+    <div className={`min-h-screen p-6 md:p-8 space-y-8 ${!darkMode ? "bg-gray-50" : ""}`}>
+      <HeroHeader accentGradient={accentGradient} />
 
+      {/* ── MIX DE CANAIS ───────────────────────── */}
       <section>
         <p style={titleStyle}>Mix de Canais por Semestre</p>
         <p style={subStyle}>Estratégia de conteúdo H1 (Jan–Jun) e H2 (Jul–Dez)</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {channels.map(ch => (
             <button key={ch.id} onClick={() => setActiveModal(ch)}
-              className={`rounded-2xl border p-6 text-left group transition-all duration-300 hover:scale-[1.01] ${cardBg}`}>
+              className="rounded-2xl p-6 text-left group transition-all duration-300 hover:scale-[1.01]"
+              style={{ background: cardBg, border: `1px solid ${cardBord}` }}>
               <div className="flex items-center gap-3 mb-5">
                 <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${ch.gradient} flex items-center justify-center flex-shrink-0`}>
                   {ch.icon}
                 </div>
                 <div className="min-w-0">
                   <h3 className={`font-bold ${valClass}`}>{ch.name}</h3>
-                  <p className={`text-xs truncate`} style={{ color: subColor }}>{ch.meta}</p>
+                  <p className="text-xs truncate" style={{ color: subColor }}>{ch.meta}</p>
                 </div>
-                <ArrowRight size={16} className={`ml-auto opacity-0 group-hover:opacity-100 transition-opacity ${darkMode ? 'text-white/40' : 'text-gray-400'}`} />
+                <ArrowRight size={16} className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{ color: subColor }} />
               </div>
               <div className="space-y-3">
                 {[{ label: "H1 (Jan–Jun)", data: ch.h1 }, { label: "H2 (Jul–Dez)", data: ch.h2 }].map(({ label, data }) => (
-                  <div key={label} className={`rounded-xl p-3 ${labelBg}`}>
-                    <p className={`text-[10px] uppercase tracking-wider font-semibold mb-2 ${darkMode ? 'text-white/30' : 'text-gray-400'}`}>{label}</p>
+                  <div key={label} className="rounded-xl p-3" style={{ background: labelBg }}>
+                    <p className="text-[10px] uppercase tracking-wider font-semibold mb-2"
+                      style={{ color: darkMode ? "rgba(255,255,255,0.30)" : "#9ca3af" }}>{label}</p>
                     <div className="space-y-1">
                       {[["Freq.", data.freq], ["Formato", data.format], ["Linguagem", data.lang]].map(([k, v]) => (
                         <div key={k} className="flex gap-2 text-xs">
-                          <span className={darkMode ? 'text-white/30' : 'text-gray-400'}>{k}:</span>
+                          <span style={{ color: subColor }}>{k}:</span>
                           <span className={`font-medium ${valClass}`}>{v}</span>
                         </div>
                       ))}
@@ -161,21 +185,33 @@ export default function Canais({ darkMode = false, accentGradient }: PageProps) 
                 ))}
               </div>
               <div className="flex flex-wrap gap-1.5 mt-4">
-                {ch.tags.map(t => <span key={t} className={`text-[10px] px-2 py-0.5 rounded-full ${tagClass}`}>{t}</span>)}
+                {ch.tags.map(t => (
+                  <span key={t} className="text-[10px] px-2 py-0.5 rounded-full"
+                    style={{ background: tagBg, color: subColor }}>{t}</span>
+                ))}
               </div>
             </button>
           ))}
         </div>
       </section>
 
-      <section className={sectionBg}>
+      {/* ── COMPARAÇÃO DE PERFORMANCE ─────────────── */}
+      <section style={sectionStyle}>
         <ChannelComparison dark={darkMode} />
       </section>
 
-      <section className={sectionBg}>
-        <p style={titleStyle}>Crescimento de Seguidores</p>
-        <p style={subStyle}>Evolução projetada para 2026</p>
-        <ChannelChart dark={darkMode} />
+      {/* ── EVOLUÇÃO DE SEGUIDORES ────────────────── */}
+      <section style={sectionStyle}>
+        <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
+          <div>
+            <p style={titleStyle}>Evolução de Seguidores</p>
+            <p style={{ ...subStyle, marginBottom: 0 }}>Trajetória de crescimento multicanal · dados do Dev Mode → Canais</p>
+          </div>
+          <EvolutionDevBadge dark={darkMode} />
+        </div>
+        <div className="mt-5">
+          <ChannelChart dark={darkMode} />
+        </div>
       </section>
 
       {activeModal && (
