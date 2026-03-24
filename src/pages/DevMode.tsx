@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw, Radio, LayoutGrid, Map, Route } from "lucide-react"
+import { Shield, Lock, Code2, Building2, Target, BarChart3, ListChecks, DollarSign, AlertTriangle, Users, TrendingUp, RefreshCw, Radio, LayoutGrid, Map, Route, Layers } from "lucide-react"
 import { useAuth } from "../lib/AuthContext"
 import { usePlanningData } from "../lib/PlanningDataContext"
 import type { GradientOption } from "../lib/types"
@@ -17,6 +17,7 @@ import DevCanais from "../components/devmode/DevCanais"
 import DevContentDistribution from "../components/devmode/DevContentDistribution"
 import DevClientJourney from "../components/devmode/DevClientJourney"
 import DevRoadmap from "../components/devmode/DevRoadmap"
+import DevPilares from "../components/devmode/DevPilares"
 
 interface PageProps {
   darkMode?: boolean
@@ -24,32 +25,33 @@ interface PageProps {
 }
 
 const TABS = [
-  { id: "empresa",        label: "Empresa",        icon: Building2 },
-  { id: "missao",         label: "Missão & Visão",  icon: Target },
-  { id: "swot",           label: "SWOT",            icon: BarChart3 },
+  { id: "empresa",        label: "Empresa",        icon: Building2  },
+  { id: "pilares",        label: "Pilares",         icon: Layers     },
+  { id: "missao",         label: "Missão & Visão",  icon: Target     },
+  { id: "swot",           label: "SWOT",            icon: BarChart3  },
   { id: "okrs",           label: "OKRs",            icon: TrendingUp },
-  { id: "kpis",           label: "KPIs",            icon: BarChart3 },
+  { id: "kpis",           label: "KPIs",            icon: BarChart3  },
   { id: "acoes",          label: "Plano de Ação",   icon: ListChecks },
   { id: "orcamento",      label: "Orçamento",       icon: DollarSign },
   { id: "riscos",         label: "Riscos",          icon: AlertTriangle },
-  { id: "equipe",         label: "Equipe",          icon: Users },
-  { id: "acompanhamento", label: "Acomp.",          icon: RefreshCw },
-  { id: "canais",         label: "Canais",          icon: Radio },
+  { id: "equipe",         label: "Equipe",          icon: Users      },
+  { id: "acompanhamento", label: "Acomp.",          icon: RefreshCw  },
+  { id: "canais",         label: "Canais",          icon: Radio      },
   { id: "conteudo",       label: "Conteúdo",        icon: LayoutGrid },
-  { id: "jornada",        label: "Jornada",         icon: Map },
-  { id: "roadmap",        label: "Roadmap",         icon: Route },
+  { id: "jornada",        label: "Jornada",         icon: Map        },
+  { id: "roadmap",        label: "Roadmap",         icon: Route      },
 ]
 
 export default function DevMode({ darkMode = true, accentGradient }: PageProps) {
-  const { user } = useAuth()
-  const { loading } = usePlanningData()
+  const { user }     = useAuth()
+  const { loading }  = usePlanningData()
   const [activeTab, setActiveTab] = useState("empresa")
 
   const isAdmin = user?.isAdmin ?? false
-  const accent = accentGradient || { from: "#3b82f6", to: "#8b5cf6", css: "linear-gradient(135deg,#3b82f6,#8b5cf6)" }
-  const cardBg = darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"
+  const accent  = accentGradient || { from: "#3b82f6", to: "#8b5cf6", css: "linear-gradient(135deg,#3b82f6,#8b5cf6)" }
+  const cardBg     = darkMode ? "rgba(255,255,255,0.04)" : "rgba(0,0,0,0.03)"
   const cardBorder = darkMode ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"
-  const textPrimary = darkMode ? "text-white" : "text-gray-900"
+  const textPrimary   = darkMode ? "text-white"    : "text-gray-900"
   const textSecondary = darkMode ? "text-white/50" : "text-gray-500"
 
   if (!isAdmin) {
@@ -101,7 +103,7 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
       <div className="flex gap-1 flex-wrap mb-6 p-1 rounded-xl"
         style={{ background: cardBg, border: `1px solid ${cardBorder}` }}>
         {TABS.map(tab => {
-          const Icon = tab.icon
+          const Icon    = tab.icon
           const isActive = activeTab === tab.id
           return (
             <button
@@ -111,8 +113,7 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
               style={{
                 background: isActive ? accent.css : "transparent",
                 color: isActive ? "#fff" : darkMode ? "rgba(255,255,255,0.5)" : "rgba(0,0,0,0.5)",
-              }}
-            >
+              }}>
               <Icon size={13} />
               <span className="hidden sm:inline">{tab.label}</span>
             </button>
@@ -122,17 +123,18 @@ export default function DevMode({ darkMode = true, accentGradient }: PageProps) 
 
       {/* Content */}
       <div>
-        {activeTab === "empresa"        && <DevEmpresa        darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "missao"         && <DevMissao         darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "swot"           && <DevSwot           darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "okrs"           && <DevOKRs           darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "kpis"           && <DevKPIs           darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "acoes"          && <DevAcoes          darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "orcamento"      && <DevOrcamento      darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "riscos"         && <DevRiscos         darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "equipe"         && <DevEquipe         darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "acompanhamento" && <DevAcompanhamento darkMode={darkMode} accentGradient={accentGradient} />}
-        {activeTab === "canais"         && <DevCanais         darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "empresa"        && <DevEmpresa            darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "pilares"        && <DevPilares            darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "missao"         && <DevMissao             darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "swot"           && <DevSwot               darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "okrs"           && <DevOKRs               darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "kpis"           && <DevKPIs               darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "acoes"          && <DevAcoes              darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "orcamento"      && <DevOrcamento          darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "riscos"         && <DevRiscos             darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "equipe"         && <DevEquipe             darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "acompanhamento" && <DevAcompanhamento     darkMode={darkMode} accentGradient={accentGradient} />}
+        {activeTab === "canais"         && <DevCanais             darkMode={darkMode} accentGradient={accentGradient} />}
         {activeTab === "conteudo"       && <DevContentDistribution dark={darkMode} />}
         {activeTab === "jornada"        && <DevClientJourney       dark={darkMode} />}
         {activeTab === "roadmap"        && <DevRoadmap             dark={darkMode} />}
