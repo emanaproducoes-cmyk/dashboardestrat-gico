@@ -4,7 +4,8 @@ import HeroHeader from "../components/dashboard/HeroHeader"
 import ChannelChart from "../components/dashboard/ChannelChart"
 import ChannelComparison from "../components/dashboard/ChannelComparison"
 import SectionDetailModal from "../components/dashboard/SectionDetailModal"
-import { Linkedin, Youtube, Instagram, Globe, ArrowRight, Info } from "lucide-react"
+import { Linkedin, Youtube, Instagram, Globe, ArrowRight, Info, Code2 } from "lucide-react"
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts"
 import { useFontSettings } from "../lib/FontSettingsContext"
 
 interface ModalSection {
@@ -83,6 +84,45 @@ const channels: Channel[] = [
     }
   }
 ]
+
+
+const conversionByChannel = [
+  { canal: "LinkedIn",   conversoes: 3,  leads: 18, color: "#3b82f6" },
+  { canal: "YouTube",    conversoes: 4,  leads: 22, color: "#ef4444" },
+  { canal: "Instagram",  conversoes: 22, leads: 60, color: "#ec4899" },
+  { canal: "Indicações", conversoes: 12, leads: 14, color: "#10b981" },
+  { canal: "Blog/SEO",   conversoes: 2,  leads: 8,  color: "#64748b" },
+]
+
+function ConvDevBadge({ dark }: { dark: boolean }) {
+  const [showConv, setShowConv] = React.useState(false)
+  return (
+    <div className="relative">
+      <button
+        onMouseEnter={() => setShowConv(true)}
+        onMouseLeave={() => setShowConv(false)}
+        className="flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-semibold"
+        style={{ background: "rgba(59,130,246,0.12)", color: "#3b82f6", border: "1px solid rgba(59,130,246,0.25)" }}>
+        <Code2 size={10} /> Editar dados
+      </button>
+      {showConv && (
+        <div className="absolute right-0 top-8 z-30 rounded-xl p-3 shadow-2xl w-60"
+          style={{ background: dark ? "#0a1628" : "#fff", border: "1px solid rgba(59,130,246,0.25)" }}>
+          <p className="text-[10px] font-bold text-blue-400 mb-1.5 uppercase tracking-wider">Caminho Dev Mode</p>
+          <div className="flex items-center gap-1.5 text-[11px] mb-2"
+            style={{ color: dark ? "rgba(255,255,255,0.70)" : "#374151" }}>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-500/20 text-blue-400">Dev Mode</span>
+            <ArrowRight size={10} className="text-blue-400" />
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-500/20 text-purple-400">Canais</span>
+          </div>
+          <p className="text-[10px]" style={{ color: dark ? "rgba(255,255,255,0.45)" : "#6b7280" }}>
+            Edite leads e conversões por canal. Salvo no Firestore para todos os usuários.
+          </p>
+        </div>
+      )}
+    </div>
+  )
+}
 
 // Badge indicador Dev Mode para seção de evolução
 function EvolutionDevBadge({ dark }: { dark: boolean }) {
@@ -200,12 +240,12 @@ export default function Canais({ darkMode = false, accentGradient }: PageProps) 
         <ChannelComparison dark={darkMode} />
       </section>
 
-      {/* ── CRESCIMENTO POR CANAL (vindo do KPIs) ─── */}
+      {/* ── CRESCIMENTO POR CANAL ────────────────── */}
       <section style={sectionStyle}>
         <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
           <div>
             <p style={titleStyle}>Crescimento por Canal</p>
-            <p style={{ ...subStyle, marginBottom: 0 }}>Evolução de seguidores ao longo de 2026</p>
+            <p style={{ ...subStyle, marginBottom: 0 }}>Evolução de seguidores ao longo de 2026 · dados do Dev Mode → Canais</p>
           </div>
           <EvolutionDevBadge dark={darkMode} />
         </div>
@@ -214,18 +254,29 @@ export default function Canais({ darkMode = false, accentGradient }: PageProps) 
         </div>
       </section>
 
-      {/* ── EVOLUÇÃO DE SEGUIDORES ────────────────── */}
+
+      {/* ── CONVERSÕES POR CANAL ─────────────────── */}
       <section style={sectionStyle}>
-        <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
+        <div className="flex items-start justify-between mb-4 flex-wrap gap-2">
           <div>
-            <p style={titleStyle}>Evolução de Seguidores</p>
-            <p style={{ ...subStyle, marginBottom: 0 }}>Trajetória de crescimento multicanal · dados do Dev Mode → Canais</p>
+            <p style={titleStyle}>Conversões por Canal</p>
+            <p style={{ ...subStyle, marginBottom: 0 }}>Leads e conversões por origem em 2026</p>
           </div>
-          <EvolutionDevBadge dark={darkMode} />
+          <ConvDevBadge dark={darkMode} />
         </div>
-        <div className="mt-5">
-          <ChannelChart dark={darkMode} />
-        </div>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={conversionByChannel} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
+            <XAxis dataKey="canal" tick={{ fontSize: 11, fill: darkMode ? "rgba(255,255,255,0.4)" : "#94a3b8" }} axisLine={false} tickLine={false} />
+            <YAxis tick={{ fontSize: 11, fill: darkMode ? "rgba(255,255,255,0.4)" : "#94a3b8" }} axisLine={false} tickLine={false} />
+            <Tooltip contentStyle={{ background: darkMode ? "#0a1628" : "#fff", border: "1px solid rgba(59,130,246,0.2)", borderRadius: 10, fontSize: 12 }} />
+            <Bar dataKey="leads" name="Leads" radius={[4, 4, 0, 0]}>
+              {conversionByChannel.map((d, i) => <Cell key={i} fill={d.color + "40"} />)}
+            </Bar>
+            <Bar dataKey="conversoes" name="Conversões" radius={[4, 4, 0, 0]}>
+              {conversionByChannel.map((d, i) => <Cell key={i} fill={d.color} />)}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </section>
 
       {activeModal && (
