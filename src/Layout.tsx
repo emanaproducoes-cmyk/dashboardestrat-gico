@@ -16,7 +16,7 @@ const navItems = [
   { name: "Conteúdo", path: "/Conteudo", icon: FileText },
   { name: "Funil", path: "/Funil", icon: FilterIcon },
   { name: "Prova Social", path: "/ProvaSocial", icon: Award },
-  { name: "Roadmap", path: "/Roadmap", icon: Map },
+  { name: "Matrizes", path: "/Roadmap", icon: Map },
   { name: "Insights", path: "/Insights", icon: Lightbulb },
 ]
 
