@@ -200,6 +200,20 @@ export default function Canais({ darkMode = false, accentGradient }: PageProps) 
         <ChannelComparison dark={darkMode} />
       </section>
 
+      {/* ── CRESCIMENTO POR CANAL (vindo do KPIs) ─── */}
+      <section style={sectionStyle}>
+        <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
+          <div>
+            <p style={titleStyle}>Crescimento por Canal</p>
+            <p style={{ ...subStyle, marginBottom: 0 }}>Evolução de seguidores ao longo de 2026</p>
+          </div>
+          <EvolutionDevBadge dark={darkMode} />
+        </div>
+        <div className="mt-5">
+          <ChannelChart dark={darkMode} />
+        </div>
+      </section>
+
       {/* ── EVOLUÇÃO DE SEGUIDORES ────────────────── */}
       <section style={sectionStyle}>
         <div className="flex items-start justify-between mb-1 flex-wrap gap-2">
